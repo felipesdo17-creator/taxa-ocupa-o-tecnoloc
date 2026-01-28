@@ -15,7 +15,11 @@ const App: React.FC = () => {
   const [equipmentData, setEquipmentData] = useState<Equipment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [userRole, setUserRole] = useState<'admin' | 'user'>(() => {
-    return (localStorage.getItem(ROLE_KEY) as 'admin' | 'user') || 'user';
+    try {
+      return (localStorage.getItem(ROLE_KEY) as 'admin' | 'user') || 'user';
+    } catch {
+      return 'user';
+    }
   });
 
   useEffect(() => {
@@ -57,7 +61,7 @@ const App: React.FC = () => {
   const renderContent = () => {
     if (isLoading) {
       return (
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex-1 flex items-center justify-center min-h-[400px]">
           <div className="animate-pulse flex flex-col items-center">
             <Database size={48} className="text-primary mb-4 opacity-20" />
             <div className="h-2 w-48 bg-gray-200 rounded-full overflow-hidden">
@@ -79,8 +83,8 @@ const App: React.FC = () => {
           </h2>
           <p className="text-gray-500 mb-8 leading-relaxed">
             {userRole === 'admin' 
-              ? "Como administrador, você precisa carregar uma planilha de frota para visualizar as análises." 
-              : "O administrador ainda não importou os dados da frota."}
+              ? "Como administrador, você precisa carregar uma planilha de frota para visualizar as análises de ocupação." 
+              : "O administrador ainda não importou os dados da frota. Por favor, retorne mais tarde."}
           </p>
           {userRole === 'admin' && (
             <button 
@@ -109,12 +113,12 @@ const App: React.FC = () => {
               <section>
                 <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Gerenciamento de Dados</h3>
                 <div className="p-6 bg-red-50 rounded-2xl border border-red-100">
-                  <p className="text-sm text-red-600 mb-4 font-medium">Cuidado: Esta ação apagará todos os dados salvos localmente.</p>
+                  <p className="text-sm text-red-600 mb-4 font-medium">Zona Crítica: Apagar todos os dados persistentes no sistema.</p>
                   <button 
                     onClick={clearData}
                     className="px-6 py-2 bg-red-600 text-white text-xs font-bold rounded-xl hover:bg-red-700 transition-colors"
                   >
-                    Resetar Banco de Dados
+                    Resetar Banco de Dados Local
                   </button>
                 </div>
               </section>
@@ -127,10 +131,10 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-[#F8F9FA]">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} userRole={userRole} />
       
-      <main className="flex-1 ml-64 min-h-screen flex flex-col bg-[#F8F9FA]">
+      <main className="flex-1 ml-64 min-h-screen flex flex-col">
         <header className="sticky top-0 z-10 bg-[#F8F9FA]/80 backdrop-blur-md px-10 py-6 flex items-center justify-between border-b border-gray-100">
           <div>
             <h1 className="text-2xl font-extrabold text-accent tracking-tight">
@@ -139,7 +143,7 @@ const App: React.FC = () => {
                activeTab === 'upload' ? 'Importação de Dados' : 'Configurações'}
             </h1>
             <p className="text-sm text-gray-400 font-medium mt-1">
-              {equipmentData.length > 0 ? `${equipmentData.length} ativos em monitoramento` : 'Pronto para análise'}
+              {equipmentData.length > 0 ? `${equipmentData.length} ativos em monitoramento` : 'Sistema pronto para análise'}
             </p>
           </div>
           
