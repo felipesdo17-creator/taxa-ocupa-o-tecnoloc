@@ -1,4 +1,8 @@
--- 1. Criar a tabela de Perfis (Profiles)
+-- ==========================================================
+-- SCRIPT DE CONFIGURAÇÃO TECNOLOC (IDEMPOTENTE)
+-- ==========================================================
+
+-- 1. Criar a tabela de Perfis (Profiles) se não existir
 CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID REFERENCES auth.users ON DELETE CASCADE NOT NULL PRIMARY KEY,
   email TEXT,
@@ -6,7 +10,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
--- 2. Criar a tabela de Equipamentos (Equipments)
+-- 2. Criar a tabela de Equipamentos (Equipments) se não existir
 CREATE TABLE IF NOT EXISTS public.equipments (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   patrimonio TEXT,
@@ -28,7 +32,7 @@ CREATE TABLE IF NOT EXISTS public.equipments (
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.equipments ENABLE ROW LEVEL SECURITY;
 
--- 4. Funções auxiliares de Segurança (Security Definer para evitar recursão no RLS)
+-- 4. Funções auxiliares de Segurança
 CREATE OR REPLACE FUNCTION public.check_is_admin()
 RETURNS BOOLEAN AS $$
 BEGIN
@@ -49,27 +53,30 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 5. Políticas de Segurança para Perfis
+-- 5. Limpar e Recriar Políticas para Perfis (Evita Erro 42710)
+DROP POLICY IF EXISTS "Usuários podem ver seu próprio perfil" ON public.profiles;
 CREATE POLICY "Usuários podem ver seu próprio perfil" 
 ON public.profiles FOR SELECT 
 USING (auth.uid() = id);
 
+DROP POLICY IF EXISTS "Admins possuem controle total sobre perfis" ON public.profiles;
 CREATE POLICY "Admins possuem controle total sobre perfis" 
 ON public.profiles FOR ALL 
 USING (public.check_is_admin());
 
--- 6. Políticas de Segurança para Equipamentos
+-- 6. Limpar e Recriar Políticas para Equipamentos
+DROP POLICY IF EXISTS "Qualquer usuário logado pode visualizar a frota" ON public.equipments;
 CREATE POLICY "Qualquer usuário logado pode visualizar a frota" 
 ON public.equipments FOR SELECT 
 TO authenticated 
 USING (true);
 
+DROP POLICY IF EXISTS "Apenas Gestores e Admins podem modificar a frota" ON public.equipments;
 CREATE POLICY "Apenas Gestores e Admins podem modificar a frota" 
 ON public.equipments FOR ALL 
 USING (public.check_is_gestor());
 
--- 7. Trigger: Criar Perfil automaticamente após o Cadastro (Auth)
--- Lógica aprimorada para tornar o e-mail do Felipe ADMIN automaticamente no primeiro acesso
+-- 7. Trigger de Novo Usuário (Auto-Admin para Felipe)
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -86,14 +93,13 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Remover trigger se já existir para evitar erro ao rodar novamente
+-- Remover e recriar o gatilho
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
 
--- 8. Promoção manual para usuários já cadastrados
+-- 8. Garantir que o Felipe seja ADMIN se já estiver cadastrado
 UPDATE public.profiles 
 SET role = 'ADMIN' 
 WHERE email = 'felipe.sdo17@gmail.com';
