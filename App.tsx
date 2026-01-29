@@ -25,7 +25,6 @@ const App: React.FC = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-  // Se o Supabase não estiver configurado, mostra tela de erro explicativa em vez de tela branca
   if (!supabase) {
     return (
       <div className="min-h-screen bg-accent flex items-center justify-center p-6">
@@ -33,15 +32,15 @@ const App: React.FC = () => {
           <div className="w-20 h-20 bg-red-50 text-red-500 rounded-3xl flex items-center justify-center mx-auto mb-6">
             <CloudOff size={40} />
           </div>
-          <h2 className="text-2xl font-black text-accent mb-4 tracking-tighter">Erro de Configuração</h2>
+          <h2 className="text-2xl font-black text-accent mb-4 tracking-tighter">Configuração Pendente</h2>
           <p className="text-gray-500 text-sm leading-relaxed mb-8">
-            As chaves de conexão com o Banco de Dados (Supabase) não foram detectadas no ambiente. 
+            As chaves do Supabase não foram encontradas. 
             <br/><br/>
-            <span className="font-bold text-accent">Como resolver:</span> Verifique se as variáveis <code className="bg-gray-100 px-1 rounded">SUPABASE_URL</code> e <code className="bg-gray-100 px-1 rounded">SUPABASE_ANON_KEY</code> foram configuradas corretamente nas configurações do projeto.
+            Adicione <code className="bg-gray-100 px-1 rounded">SUPABASE_URL</code> e <code className="bg-gray-100 px-1 rounded">SUPABASE_ANON_KEY</code> nas variáveis de ambiente do projeto para ativar o banco de dados.
           </p>
           <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100 flex items-start gap-3 text-left">
             <AlertTriangle className="text-amber-600 shrink-0" size={18} />
-            <p className="text-[10px] text-amber-800 font-bold uppercase tracking-wider">Atenção: Sem o banco de dados, o sistema de login e persistência não pode ser iniciado.</p>
+            <p className="text-[10px] text-amber-800 font-bold uppercase tracking-wider">Atenção: A interface requer conexão ativa com o servidor.</p>
           </div>
         </div>
       </div>
@@ -158,7 +157,7 @@ const App: React.FC = () => {
                   <span className="text-[10px] font-black text-primary">TL</span>
                 </div>
               </div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] mt-6">Conectando aos Sistemas...</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] mt-6">Sincronizando Banco de Dados...</p>
             </div>
           ) : (
             <>
@@ -167,7 +166,7 @@ const App: React.FC = () => {
               {activeTab === 'upload' && (role === 'GESTOR' || role === 'ADMIN') && (
                 <FileUpload onDataLoaded={fetchCloudData} />
               )}
-              {activeTab === 'users' && role === 'ADMIN' && <UserManagement />}
+              {activeTab === 'users' && role === 'ADMIN' && <UserManagement supabase={supabase} />}
             </>
           )}
         </section>

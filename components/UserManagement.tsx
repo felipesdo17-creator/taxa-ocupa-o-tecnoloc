@@ -1,23 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
-import { Shield, User, Mail, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { Shield, RefreshCw } from 'lucide-react';
 
-const supabase = createClient(process.env.SUPABASE_URL || '', process.env.SUPABASE_ANON_KEY || '');
+interface UserManagementProps {
+  supabase: SupabaseClient;
+}
 
-const UserManagement: React.FC = () => {
+const UserManagement: React.FC<UserManagementProps> = ({ supabase }) => {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
 
   const fetchUsers = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .order('created_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    if (!error && data) setUsers(data);
-    setLoading(false);
+      if (!error && data) setUsers(data);
+    } catch (err) {
+      console.error("Erro ao carregar usuários:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -40,7 +47,7 @@ const UserManagement: React.FC = () => {
   if (loading) return (
     <div className="flex flex-col items-center justify-center py-20">
       <RefreshCw className="animate-spin text-primary mb-4" size={32} />
-      <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Carregando usuários...</p>
+      <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Sincronizando permissões...</p>
     </div>
   );
 
@@ -52,7 +59,7 @@ const UserManagement: React.FC = () => {
             <h2 className="text-2xl font-black text-accent flex items-center gap-3">
               <Shield className="text-primary" /> Gestão de Acesso
             </h2>
-            <p className="text-xs text-gray-400 font-medium mt-1 uppercase tracking-wider">Controle quem pode visualizar ou gerenciar os dados</p>
+            <p className="text-xs text-gray-400 font-medium mt-1 uppercase tracking-wider">Configure os níveis de segurança da Tecnoloc</p>
           </div>
           <button onClick={fetchUsers} className="p-3 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-colors">
             <RefreshCw size={20} className="text-accent" />
@@ -78,7 +85,7 @@ const UserManagement: React.FC = () => {
                       </div>
                       <div className="flex flex-col">
                         <span className="text-sm font-bold text-accent">{user.email}</span>
-                        <span className="text-[10px] text-gray-400">Cadastrado em {new Date(user.created_at).toLocaleDateString()}</span>
+                        <span className="text-[10px] text-gray-400">Desde {new Date(user.created_at).toLocaleDateString()}</span>
                       </div>
                     </div>
                   </td>
