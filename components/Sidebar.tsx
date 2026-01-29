@@ -1,74 +1,96 @@
-
-import React from 'react';
-import { BarChart3, Package, Upload, Settings, Database, Share2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { BarChart3, Package, Upload, ShieldAlert, ChevronLeft, ChevronRight, LogOut, Users } from 'lucide-react';
 
 interface SidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
-  userRole: 'admin' | 'user';
+  userRole: string;
+  onLogout: () => void;
+  isCollapsed: boolean;
+  setIsCollapsed: (val: boolean) => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, userRole }) => {
+const Sidebar: React.FC<SidebarProps> = ({ 
+  activeTab, 
+  setActiveTab, 
+  userRole, 
+  onLogout, 
+  isCollapsed, 
+  setIsCollapsed 
+}) => {
   const navItems = [
-    { id: 'dashboard', label: 'Taxa de Ocupação', icon: BarChart3, roles: ['admin', 'user'] },
-    { id: 'equipments', label: 'Equipamentos', icon: Package, roles: ['admin', 'user'] },
-    { id: 'upload', label: 'Upload de Dados', icon: Upload, roles: ['admin'] },
-    { id: 'admin', label: 'Configurações', icon: Settings, roles: ['admin'] },
+    { id: 'dashboard', label: 'Dashboard', icon: BarChart3, roles: ['USUARIO', 'GESTOR', 'ADMIN'] },
+    { id: 'equipments', label: 'Equipamentos', icon: Package, roles: ['USUARIO', 'GESTOR', 'ADMIN'] },
+    { id: 'upload', label: 'Importar Dados', icon: Upload, roles: ['GESTOR', 'ADMIN'] },
+    { id: 'users', label: 'Gestão de Acesso', icon: Users, roles: ['ADMIN'] },
   ];
 
-  const filteredNavItems = navItems.filter(item => item.roles.includes(userRole));
+  const filteredItems = navItems.filter(item => item.roles.includes(userRole));
 
   return (
-    <aside className="w-64 bg-accent text-white flex flex-col h-screen fixed left-0 top-0 z-20 transition-all duration-300">
-      <div className="p-8 flex items-center gap-3 border-b border-white/5">
-        <div className="bg-white rounded-xl p-2 shadow-lg flex items-center justify-center">
-          {/* Simulated logo based on the provided image */}
-          <div className="relative w-8 h-8">
-             <div className="absolute inset-0 border-[3px] border-primary rounded-full border-t-transparent border-l-transparent rotate-45"></div>
-             <div className="absolute inset-1 border-[3px] border-secondary rounded-full border-b-transparent border-r-transparent -rotate-45"></div>
-             <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
-             </div>
+    <aside 
+      className={`hidden md:flex flex-col bg-accent text-white h-screen fixed left-0 top-0 z-40 transition-all duration-500 ease-in-out border-r border-white/5 ${
+        isCollapsed ? 'w-20' : 'w-64'
+      }`}
+    >
+      <div className="p-6 flex items-center justify-between border-b border-white/5 h-24">
+        {!isCollapsed ? (
+          <div className="flex flex-col animate-in fade-in duration-500">
+            <span className="font-black text-2xl italic tracking-tighter text-primary">TECNOLOC</span>
+            <span className="text-[8px] font-bold uppercase text-gray-400 tracking-[0.2em]">Frota Inteligente</span>
           </div>
-        </div>
-        <div className="flex flex-col">
-          <span className="font-black text-xl tracking-tighter leading-none italic text-white">TECNOLOC</span>
-          <span className="text-[7px] font-bold uppercase tracking-tight text-secondary-light">Locação de equipamentos</span>
-        </div>
+        ) : (
+          <div className="w-full flex justify-center">
+            <span className="font-black text-xl italic text-primary">T</span>
+          </div>
+        )}
       </div>
-      
-      <nav className="flex-1 py-8 px-4 space-y-2">
-        {filteredNavItems.map((item) => {
+
+      <nav className="flex-1 py-8 px-3 space-y-2">
+        {filteredItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
           return (
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center gap-4 px-5 py-3.5 rounded-2xl transition-all duration-200 group ${
+              className={`w-full flex items-center gap-4 px-4 py-4 rounded-2xl transition-all duration-300 group relative ${
                 isActive 
-                  ? 'bg-primary text-white shadow-lg shadow-primary/20' 
+                  ? 'bg-primary text-white shadow-xl shadow-primary/20' 
                   : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`}
+              title={isCollapsed ? item.label : ''}
             >
-              <Icon size={20} className={isActive ? 'text-secondary' : 'group-hover:text-primary-light transition-colors'} />
-              <span className="font-bold text-xs">{item.label}</span>
+              <Icon size={22} className={isActive ? 'text-white' : 'group-hover:text-primary transition-colors'} />
+              {!isCollapsed && (
+                <span className="font-bold text-xs truncate animate-in slide-in-from-left-2 uppercase tracking-wider">
+                  {item.label}
+                </span>
+              )}
+              {isCollapsed && isActive && (
+                <div className="absolute right-0 w-1.5 h-8 bg-primary rounded-l-full" />
+              )}
             </button>
           );
         })}
       </nav>
-      
-      <div className="p-6">
-        <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-          <p className="text-[9px] uppercase font-black text-gray-500 tracking-widest mb-2">Ambiente Ativo</p>
-          <p className={`text-[10px] font-black ${userRole === 'admin' ? 'text-secondary' : 'text-primary-light'}`}>
-            {userRole === 'admin' ? 'ACESSO MASTER' : 'CONSULTOR'}
-          </p>
-        </div>
-      </div>
-      
-      <div className="p-6 text-[9px] font-bold text-gray-600 text-center border-t border-white/5">
-        TECNOLOC © 2025
+
+      <div className="p-4 space-y-2 border-t border-white/5">
+        <button 
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="w-full flex items-center gap-4 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all"
+        >
+          {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+          {!isCollapsed && <span className="text-[10px] font-black uppercase tracking-widest">Recolher Menu</span>}
+        </button>
+        
+        <button 
+          onClick={onLogout}
+          className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl text-red-400 hover:bg-red-400/10 transition-all group"
+        >
+          <LogOut size={22} className="group-hover:translate-x-1 transition-transform" />
+          {!isCollapsed && <span className="font-bold text-xs uppercase tracking-wider">Sair</span>}
+        </button>
       </div>
     </aside>
   );
