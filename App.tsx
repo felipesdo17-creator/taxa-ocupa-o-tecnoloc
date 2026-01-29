@@ -11,9 +11,9 @@ import ChatAssistant from './components/ChatAssistant';
 import { Equipment } from './types';
 import { RefreshCw, UserCircle, AlertTriangle, CloudOff } from 'lucide-react';
 
-// Inicialização segura do Supabase
-const supabaseUrl = process.env.SUPABASE_URL || '';
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || '';
+// Inicialização resiliente do Supabase (Aceita com ou sem prefixo VITE_)
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
 const supabase = (supabaseUrl && supabaseAnonKey) ? createClient(supabaseUrl, supabaseAnonKey) : null;
 
 const App: React.FC = () => {
@@ -34,13 +34,14 @@ const App: React.FC = () => {
           </div>
           <h2 className="text-2xl font-black text-accent mb-4 tracking-tighter">Configuração Pendente</h2>
           <p className="text-gray-500 text-sm leading-relaxed mb-8">
-            As chaves do Supabase não foram encontradas. 
+            As chaves do Supabase não foram detectadas corretamente. 
             <br/><br/>
-            Adicione <code className="bg-gray-100 px-1 rounded">SUPABASE_URL</code> e <code className="bg-gray-100 px-1 rounded">SUPABASE_ANON_KEY</code> nas variáveis de ambiente do projeto para ativar o banco de dados.
+            O sistema tentou ler: <br/>
+            <code className="bg-gray-100 px-1 rounded text-[10px]">VITE_SUPABASE_URL</code> ou <code className="bg-gray-100 px-1 rounded text-[10px]">SUPABASE_URL</code>
           </p>
           <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100 flex items-start gap-3 text-left">
             <AlertTriangle className="text-amber-600 shrink-0" size={18} />
-            <p className="text-[10px] text-amber-800 font-bold uppercase tracking-wider">Atenção: A interface requer conexão ativa com o servidor.</p>
+            <p className="text-[10px] text-amber-800 font-bold uppercase tracking-wider">Certifique-se de que as chaves foram salvas e o ambiente reiniciado.</p>
           </div>
         </div>
       </div>

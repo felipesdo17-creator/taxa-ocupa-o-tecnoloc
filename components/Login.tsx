@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { ShieldCheck, Mail, Lock, Loader2, ArrowRight, CloudOff } from 'lucide-react';
 
-const supabaseUrl = process.env.SUPABASE_URL || '';
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || '';
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
 const supabase = (supabaseUrl && supabaseAnonKey) ? createClient(supabaseUrl, supabaseAnonKey) : null;
 
 interface LoginProps {
@@ -41,7 +41,7 @@ const Login: React.FC<LoginProps> = ({ onSuccess }) => {
     }
   };
 
-  if (!supabase) return null; // O App.tsx já trata isso, mas por segurança.
+  if (!supabase) return null;
 
   return (
     <div className="min-h-screen bg-accent flex items-center justify-center p-6 sm:p-12 relative overflow-hidden">
