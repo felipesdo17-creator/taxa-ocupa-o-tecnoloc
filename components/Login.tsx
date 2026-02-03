@@ -1,14 +1,7 @@
 
 import React, { useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase';
 import { ShieldCheck, Mail, Lock, Loader2, ArrowRight, CloudOff } from 'lucide-react';
-
-// Inicialização compatível com Vite (import.meta.env) e fallbacks
-// Fix: Cast import.meta to any to bypass environment-specific property access error
-const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || process.env?.VITE_SUPABASE_URL || process.env?.SUPABASE_URL || '';
-// Fix: Cast import.meta to any to bypass environment-specific property access error
-const supabaseAnonKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || process.env?.VITE_SUPABASE_ANON_KEY || process.env?.SUPABASE_ANON_KEY || '';
-const supabase = (supabaseUrl && supabaseAnonKey) ? createClient(supabaseUrl, supabaseAnonKey) : null;
 
 interface LoginProps {
   onSuccess: () => void;
@@ -30,12 +23,10 @@ const Login: React.FC<LoginProps> = ({ onSuccess }) => {
 
     try {
       if (isSignUp) {
-        // Fix: Access auth methods via any cast to resolve property missing errors on SupabaseAuthClient
         const { error } = await (supabase.auth as any).signUp({ email, password });
         if (error) throw error;
         alert("Conta criada! O Administrador irá definir seu nível de acesso.");
       } else {
-        // Fix: Access auth methods via any cast to resolve property missing errors on SupabaseAuthClient
         const { error } = await (supabase.auth as any).signInWithPassword({ email, password });
         if (error) throw error;
         onSuccess();
@@ -47,7 +38,17 @@ const Login: React.FC<LoginProps> = ({ onSuccess }) => {
     }
   };
 
-  if (!supabase) return null;
+  if (!supabase) {
+    return (
+      <div className="min-h-screen bg-accent flex items-center justify-center p-6">
+        <div className="bg-white p-8 rounded-3xl text-center shadow-2xl">
+          <CloudOff className="text-red-500 mx-auto mb-4" size={48} />
+          <h2 className="text-xl font-bold">Erro de Conexão</h2>
+          <p className="text-gray-500 text-sm mt-2">Supabase não inicializado corretamente.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-accent flex items-center justify-center p-6 sm:p-12 relative overflow-hidden">
