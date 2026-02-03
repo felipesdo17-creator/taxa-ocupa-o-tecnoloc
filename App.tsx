@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import Sidebar from './components/Sidebar';
@@ -11,9 +12,11 @@ import ChatAssistant from './components/ChatAssistant';
 import { Equipment } from './types';
 import { RefreshCw, UserCircle, AlertTriangle, CloudOff } from 'lucide-react';
 
-// Inicialização resiliente do Supabase (Aceita com ou sem prefixo VITE_)
-const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
+// Inicialização compatível com Vite (import.meta.env) e fallbacks
+// Fix: Cast import.meta to any to bypass environment-specific property access error
+const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || process.env?.VITE_SUPABASE_URL || process.env?.SUPABASE_URL || '';
+// Fix: Cast import.meta to any to bypass environment-specific property access error
+const supabaseAnonKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || process.env?.VITE_SUPABASE_ANON_KEY || process.env?.SUPABASE_ANON_KEY || '';
 const supabase = (supabaseUrl && supabaseAnonKey) ? createClient(supabaseUrl, supabaseAnonKey) : null;
 
 const App: React.FC = () => {
@@ -34,14 +37,14 @@ const App: React.FC = () => {
           </div>
           <h2 className="text-2xl font-black text-accent mb-4 tracking-tighter">Configuração Pendente</h2>
           <p className="text-gray-500 text-sm leading-relaxed mb-8">
-            As chaves do Supabase não foram detectadas corretamente. 
+            As chaves do Supabase não foram detectadas. 
             <br/><br/>
-            O sistema tentou ler: <br/>
-            <code className="bg-gray-100 px-1 rounded text-[10px]">VITE_SUPABASE_URL</code> ou <code className="bg-gray-100 px-1 rounded text-[10px]">SUPABASE_URL</code>
+            O Vite requer o acesso via: <br/>
+            <code className="bg-gray-100 px-1 rounded text-[10px]">import.meta.env.VITE_SUPABASE_URL</code>
           </p>
           <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100 flex items-start gap-3 text-left">
             <AlertTriangle className="text-amber-600 shrink-0" size={18} />
-            <p className="text-[10px] text-amber-800 font-bold uppercase tracking-wider">Certifique-se de que as chaves foram salvas e o ambiente reiniciado.</p>
+            <p className="text-[10px] text-amber-800 font-bold uppercase tracking-wider">Verifique se as variáveis no seu painel de controle possuem o prefixo VITE_ e se o projeto foi reiniciado.</p>
           </div>
         </div>
       </div>
@@ -49,12 +52,14 @@ const App: React.FC = () => {
   }
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // Fix: Access auth methods via any cast to resolve property missing errors on SupabaseAuthClient
+    (supabase.auth as any).getSession().then(({ data: { session } }: any) => {
       setSession(session);
       if (session) fetchProfile(session.user.id);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    // Fix: Access auth methods via any cast to resolve property missing errors on SupabaseAuthClient
+    const { data: { subscription } } = (supabase.auth as any).onAuthStateChange((_event: any, session: any) => {
       setSession(session);
       if (session) fetchProfile(session.user.id);
       else setUserProfile(null);
@@ -94,7 +99,8 @@ const App: React.FC = () => {
   }, [session]);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    // Fix: Access auth methods via any cast to resolve property missing errors on SupabaseAuthClient
+    await (supabase.auth as any).signOut();
   };
 
   if (!session) return <Login onSuccess={() => {}} />;
