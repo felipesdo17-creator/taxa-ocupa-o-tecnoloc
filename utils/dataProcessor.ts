@@ -96,9 +96,9 @@ const detectState = (centro: string): 'MG' | 'PA' | 'Outro' => {
   return "Outro";
 };
 
-export const processRawData = (data: any[]): Equipment[] => {
+export const processRawData = (data: any[]): Partial<Equipment>[] => {
   const seen = new Set<string>();
-  const processed: Equipment[] = [];
+  const processed: Partial<Equipment>[] = [];
 
   const fieldMap: Record<string, string> = {
     'patrimonio': 'patrimonio',
@@ -116,7 +116,6 @@ export const processRawData = (data: any[]): Equipment[] => {
     const normalizedRow: any = {};
     Object.keys(row).forEach(key => {
       const normalizedKey = normalizeString(key).toLowerCase();
-      // Match exact or contains for better robustness
       const targetFieldKey = Object.keys(fieldMap).find(fk => 
         normalizedKey === fk.toLowerCase() || 
         normalizedKey.includes(fk.toLowerCase())
@@ -133,7 +132,6 @@ export const processRawData = (data: any[]): Equipment[] => {
     seen.add(uniqueKey);
 
     processed.push({
-      id: crypto.randomUUID(),
       patrimonio: pat,
       nome_bem: normalizedRow.nome_bem || 'N/A',
       modelo: identifyModel(normalizedRow.nome_bem || '', pat),
