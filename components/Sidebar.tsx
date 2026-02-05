@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart3, Package, Upload, ChevronLeft, ChevronRight, LogOut, Users } from 'lucide-react';
+import { BarChart3, Package, Upload, ChevronLeft, ChevronRight, LogOut, Users, LucideIcon } from 'lucide-react';
 
 interface SidebarProps {
   activeTab: string;
@@ -10,6 +10,25 @@ interface SidebarProps {
   setIsCollapsed: (val: boolean) => void;
 }
 
+interface NavItem {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  roles: string[];
+}
+
+const NAVIGATION_ITEMS: NavItem[] = [
+  { id: 'dashboard', label: 'Dashboard', icon: BarChart3, roles: ['USUARIO', 'GESTOR', 'ADMIN'] },
+  {
+    id: 'equipments',
+    label: 'Equipamentos',
+    icon: Package,
+    roles: ['USUARIO', 'GESTOR', 'ADMIN'],
+  },
+  { id: 'upload', label: 'Importar Dados', icon: Upload, roles: ['GESTOR', 'ADMIN'] },
+  { id: 'users', label: 'Gestão de Acesso', icon: Users, roles: ['ADMIN'] },
+];
+
 const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
   setActiveTab,
@@ -18,19 +37,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   isCollapsed,
   setIsCollapsed,
 }) => {
-  const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: BarChart3, roles: ['USUARIO', 'GESTOR', 'ADMIN'] },
-    {
-      id: 'equipments',
-      label: 'Equipamentos',
-      icon: Package,
-      roles: ['USUARIO', 'GESTOR', 'ADMIN'],
-    },
-    { id: 'upload', label: 'Importar Dados', icon: Upload, roles: ['GESTOR', 'ADMIN'] },
-    { id: 'users', label: 'Gestão de Acesso', icon: Users, roles: ['ADMIN'] },
-  ];
-
-  const filteredItems = navItems.filter((item) => item.roles.includes(userRole));
+  const filteredItems = NAVIGATION_ITEMS.filter((item) => item.roles.includes(userRole));
 
   return (
     <aside
@@ -64,11 +71,11 @@ const Sidebar: React.FC<SidebarProps> = ({
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center gap-4 ${
+              className={`w-full flex items-center gap-4 rounded-2xl transition-all duration-300 group relative ${
                 isActive
-                  ? 'px-6 py-4 bg-primary text-white rounded-2xl shadow-[0_12px_28px_rgba(255,107,0,0.14)]'
-                  : 'px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-2xl'
-              } transition-all duration-300 group relative`}
+                  ? 'px-6 py-4 bg-primary text-white shadow-[0_12px_28px_rgba(255,107,0,0.14)]'
+                  : 'px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5'
+              }`}
               title={isCollapsed ? item.label : ''}
             >
               <div

@@ -1,26 +1,12 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
+@import "tailwindcss";
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-body {
-  font-family: Inter, sans-serif;
-  background-color: #f8f9fa;
-  margin: 0;
-  -webkit-tap-highlight-color: transparent;
-  overflow-x: hidden;
-}
-
-.pb-safe {
-  padding-bottom: env(safe-area-inset-bottom);
-}
-
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+@theme {
+  /* Cores customizadas (Tecnoloc) - equivalentes ao tailwind.config.js */
+  --color-primary: #FF6B00;
+  --color-primary-dark: #E66000;
+  --color-primary-light: #FFE8D0;
+  --color-secondary: #64748b;
+  --color-secondary-light: #F1F5F9;
+  --color-accent: #0F172A;
+  --color-accent-light: #F8F9FA;
 }

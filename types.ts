@@ -52,3 +52,28 @@ export interface AggregateItem {
   total: number;
   to: number;
 }
+
+export type UserRole = 'USUARIO' | 'GESTOR' | 'ADMIN';
+
+export interface Profile {
+  id: string;
+  email: string;
+  role: UserRole;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface Message {
+  id: string;
+  content: string;
+  sender: 'user' | 'assistant';
+  timestamp: Date;
+}
+
+export interface ChartData {
+  name: string;
+  liberado: number;
+  manutencao: number;
+  locado: number;
+  to: number;
+}

@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Shield, RefreshCw } from 'lucide-react';
+import { Profile, UserRole } from '../types';
+import Badge from './ui/Badge';
+import Button from './ui/Button';
 
 interface UserManagementProps {
   supabase: SupabaseClient;
 }
 
+const ROLE_OPTIONS: UserRole[] = ['USUARIO', 'GESTOR', 'ADMIN'];
+
 const UserManagement: React.FC<UserManagementProps> = ({ supabase }) => {
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
 
@@ -19,7 +24,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ supabase }) => {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (!error && data) setUsers(data);
+      if (!error && data) setUsers(data as Profile[]);
     } catch (err) {
       console.error('Erro ao carregar usuários:', err);
     } finally {
@@ -31,7 +36,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ supabase }) => {
     fetchUsers();
   }, []);
 
-  const updateRole = async (userId: string, newRole: string) => {
+  const updateRole = async (userId: string, newRole: UserRole) => {
     setUpdating(userId);
     const { error } = await supabase.from('profiles').update({ role: newRole }).eq('id', userId);
 
@@ -39,6 +44,15 @@ const UserManagement: React.FC<UserManagementProps> = ({ supabase }) => {
       setUsers(users.map((u) => (u.id === userId ? { ...u, role: newRole } : u)));
     }
     setUpdating(null);
+  };
+
+  const getRoleBadgeVariant = (role: UserRole) => {
+    const variants: Record<UserRole, 'success' | 'warning' | 'danger' | 'info' | 'neutral'> = {
+      USUARIO: 'info',
+      GESTOR: 'warning',
+      ADMIN: 'danger',
+    };
+    return variants[role];
   };
 
   if (loading)
@@ -63,12 +77,12 @@ const UserManagement: React.FC<UserManagementProps> = ({ supabase }) => {
               Configure os níveis de segurança da Tecnoloc
             </p>
           </div>
-          <button
+          <Button
             onClick={fetchUsers}
-            className="p-3 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-colors"
-          >
-            <RefreshCw size={20} className="text-accent" />
-          </button>
+            variant="secondary"
+            size="md"
+            icon={<RefreshCw size={18} />}
+          />
         </div>
 
         <div className="overflow-x-auto">
@@ -103,33 +117,22 @@ const UserManagement: React.FC<UserManagementProps> = ({ supabase }) => {
                     </div>
                   </td>
                   <td className="px-6 py-6">
-                    <span
-                      className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter border ${
-                        user.role === 'ADMIN'
-                          ? 'bg-red-50 text-red-600 border-red-100'
-                          : user.role === 'GESTOR'
-                            ? 'bg-primary/10 text-primary border-primary/20'
-                            : 'bg-blue-50 text-blue-600 border-blue-100'
-                      }`}
-                    >
+                    <Badge variant={getRoleBadgeVariant(user.role)} size="md">
                       {user.role}
-                    </span>
+                    </Badge>
                   </td>
                   <td className="px-6 py-6 text-right">
                     <div className="flex justify-end gap-2">
-                      {['USUARIO', 'GESTOR', 'ADMIN'].map((role) => (
-                        <button
+                      {ROLE_OPTIONS.map((role) => (
+                        <Button
                           key={role}
                           disabled={updating === user.id || user.role === role}
                           onClick={() => updateRole(user.id, role)}
-                          className={`px-3 py-2 rounded-xl text-[9px] font-black transition-all ${
-                            user.role === role
-                              ? 'bg-accent text-white'
-                              : 'bg-gray-50 text-gray-400 hover:bg-gray-100'
-                          }`}
+                          variant={user.role === role ? 'primary' : 'secondary'}
+                          size="sm"
                         >
                           {updating === user.id && user.role === role ? '...' : role}
-                        </button>
+                        </Button>
                       ))}
                     </div>
                   </td>

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { ShieldCheck, Mail, Lock, Loader2, ArrowRight, CloudOff } from 'lucide-react';
+import { ShieldCheck, Mail, Lock, ArrowRight, CloudOff } from 'lucide-react';
+import Button from './ui/Button';
+import Input from './ui/Input';
 
 interface LoginProps {
   onSuccess: () => void;
@@ -67,34 +69,22 @@ const Login: React.FC<LoginProps> = ({ onSuccess }) => {
 
         <form onSubmit={handleAuth} className="space-y-6">
           <div className="space-y-4">
-            <div className="relative group">
-              <Mail
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-primary transition-colors"
-                size={18}
-              />
-              <input
-                type="email"
-                placeholder="Seu E-mail"
-                required
-                className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent rounded-2xl text-sm focus:border-primary/20 focus:bg-white outline-none transition-all font-medium"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div className="relative group">
-              <Lock
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-primary transition-colors"
-                size={18}
-              />
-              <input
-                type="password"
-                placeholder="Sua Senha"
-                required
-                className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent rounded-2xl text-sm focus:border-primary/20 focus:bg-white outline-none transition-all font-medium"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
+            <Input
+              type="email"
+              placeholder="Seu E-mail"
+              required
+              icon={<Mail size={18} />}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            <Input
+              type="password"
+              placeholder="Sua Senha"
+              required
+              icon={<Lock size={18} />}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
           </div>
 
           {error && (
@@ -103,20 +93,17 @@ const Login: React.FC<LoginProps> = ({ onSuccess }) => {
             </div>
           )}
 
-          <button
+          <Button
             type="submit"
             disabled={isLoading}
-            className="w-full py-5 bg-accent text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl hover:bg-black active:scale-[0.98] transition-all flex items-center justify-center gap-3 group"
+            loading={isLoading}
+            variant="primary"
+            size="lg"
+            icon={!isLoading && <ArrowRight size={20} />}
+            className="w-full"
           >
-            {isLoading ? (
-              <Loader2 className="animate-spin" size={20} />
-            ) : (
-              <>
-                {isSignUp ? 'Criar Nova Conta' : 'Acessar Dashboard'}
-                <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-              </>
-            )}
-          </button>
+            {isSignUp ? 'Criar Nova Conta' : 'Acessar Dashboard'}
+          </Button>
         </form>
 
         <div className="mt-10 text-center">
