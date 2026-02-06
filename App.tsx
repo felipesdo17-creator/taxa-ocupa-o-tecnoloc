@@ -83,11 +83,16 @@ const App: React.FC = () => {
     if (!session || !supabase) return;
     setIsSyncing(true);
     try {
+      // AQUI ESTAVA O PROBLEMA: Adicionei .limit(5000)
       const { data, error } = await supabase
         .from('equipments')
         .select('*')
+        .limit(5000) // <--- CORREÇÃO: Aumenta o limite de 1000 para 5000
         .order('patrimonio', { ascending: true });
+        
       if (error) throw error;
+      
+      console.log(`Dados carregados: ${data?.length} itens.`); // Log para você confirmar no console
       setEquipmentData((data as Equipment[]) || []);
     } catch (err) {
       console.error('Erro ao buscar dados:', err);
