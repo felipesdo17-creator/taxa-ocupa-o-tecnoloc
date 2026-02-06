@@ -8,6 +8,147 @@ export const normalizeString = (str: string) =>
     .trim()
     .toUpperCase();
 
+/**
+ * Categoriza equipamento GRUPO GERADOR conforme classes comerciais oficiais.
+ * REGRA: não considerar apenas potência exata; seguir as categorias abaixo.
+ * Retorna exatamente "Grupo Gerador XXKVA" ou null se não for gerador.
+ */
+export function categorizeGrupoGerador(nome: string, patrimonio?: string): string | null {
+  const n = normalizeString(nome);
+  const p = normalizeString(patrimonio || '');
+  const combined = `${n} ${p}`;
+
+  const isGerador =
+    combined.includes('GERADOR') || combined.includes('KVA') || p.match(/^(GG|GA|CG|GS|GH|GB|GW)/);
+  if (!isGerador) return null;
+
+  // 1) Grupo Gerador 19KVA — ex: BRANCO DIESEL 19 KVA, BRANCO DIESEL 19 KVA 127/2
+  if (combined.includes('19 KVA') || combined.includes('19KVA')) return 'Grupo Gerador 19KVA';
+
+  // 2) Grupo Gerador 22KVA — ex: PRAMAC 22 KVA
+  if (combined.includes('PRAMAC 22') || combined.includes('22 KVA')) return 'Grupo Gerador 22KVA';
+
+  // 3) Grupo Gerador 33KVA — ex: BRANCO DIESEL 33 KVA
+  if (combined.includes('33 KVA') || combined.includes('33KVA')) return 'Grupo Gerador 33KVA';
+
+  // 4) Grupo Gerador 55KVA — faixa ~48–60 KVA + regra comercial (listas internas podem forçar 80/116/170/180/200/212 → 55KVA)
+  if (
+    combined.includes('ATLAS COPCO QAS 55') ||
+    combined.includes('QAS 55') ||
+    combined.includes('CUMMINS 55 KVA') ||
+    combined.includes('C40D6') ||
+    combined.includes('53 KVA') ||
+    combined.includes('BRANCO 48') ||
+    combined.includes('48 KVA') ||
+    combined.includes('GENERAC 59') ||
+    combined.includes('59 KVA') ||
+    combined.includes('PRAMAC 60') ||
+    combined.includes('60 KVA') ||
+    combined.includes('STEMAC 55/50') ||
+    combined.includes('WACKER NEUSON 52') ||
+    combined.includes('WACKER 52') ||
+    combined.includes('52 KVA') ||
+    combined.includes('55 KVA') ||
+    combined.includes('55/50')
+  )
+    return 'Grupo Gerador 55KVA';
+
+  // 5) Grupo Gerador 81KVA — ~75–81 KVA
+  if (
+    combined.includes('CUMMINS 80') ||
+    combined.includes('CUMMINS 81') ||
+    combined.includes('PRAMAC 80') ||
+    combined.includes('STEMAC 81/78') ||
+    combined.includes('WACKER NEUSON 75') ||
+    combined.includes('WACKER 75') ||
+    combined.includes('81 KVA') ||
+    combined.includes('80 KVA') ||
+    combined.includes('75 KVA')
+  )
+    return 'Grupo Gerador 81KVA';
+
+  // 6) Grupo Gerador 120KVA — ~105–127 KVA
+  if (
+    combined.includes('ATLAS QAS 105') ||
+    combined.includes('QAS 105') ||
+    combined.includes('CUMMINS 116') ||
+    combined.includes('CUMMINS 120') ||
+    combined.includes('CUMMINS 125') ||
+    combined.includes('GENERAC 127') ||
+    combined.includes('PRAMAC 127') ||
+    combined.includes('HIMOINSA 125') ||
+    combined.includes('WACKER NEUSON 121') ||
+    combined.includes('WACKER 121') ||
+    combined.includes('120 KVA') ||
+    combined.includes('127 KVA') ||
+    combined.includes('116 KVA') ||
+    combined.includes('125 KVA') ||
+    combined.includes('121 KVA') ||
+    combined.includes('105 KVA')
+  )
+    return 'Grupo Gerador 120KVA';
+
+  // 7) Grupo Gerador 150KVA — ~140–150 KVA
+  if (
+    combined.includes('CUMMINS 140') ||
+    combined.includes('CUMMINS 150') ||
+    combined.includes('GENERAC 140') ||
+    combined.includes('GENERAC 150') ||
+    combined.includes('STEMAC 150/141') ||
+    combined.includes('WACKER NEUSON 150') ||
+    combined.includes('WACKER 150') ||
+    combined.includes('150 KVA') ||
+    combined.includes('140 KVA')
+  )
+    return 'Grupo Gerador 150KVA';
+
+  // 8) Grupo Gerador 170KVA
+  if (
+    combined.includes('CUMMINS 170') ||
+    combined.includes('STEMAC 180/168') ||
+    combined.includes('170 KVA') ||
+    combined.includes('180/168')
+  )
+    return 'Grupo Gerador 170KVA';
+
+  // 9) Grupo Gerador 200KVA
+  if (
+    combined.includes('STEMAC 200/180') ||
+    combined.includes('CUMMINS 212') ||
+    combined.includes('200 KVA') ||
+    combined.includes('212 KVA')
+  )
+    return 'Grupo Gerador 200KVA';
+
+  // 10) Grupo Gerador 260KVA
+  if (
+    combined.includes('CUMMINS 260') ||
+    combined.includes('STEMAC 260/240') ||
+    combined.includes('260 KVA')
+  )
+    return 'Grupo Gerador 260KVA';
+
+  // 11) Grupo Gerador 360KVA
+  if (
+    combined.includes('CUMMINS 385') ||
+    combined.includes('STEMAC 360/325') ||
+    combined.includes('360 KVA') ||
+    combined.includes('385 KVA')
+  )
+    return 'Grupo Gerador 360KVA';
+
+  // 12) Grupo Gerador 500KVA
+  if (
+    combined.includes('CUMMINS 500') ||
+    combined.includes('GENERAC 500') ||
+    combined.includes('STEMAC 500/455') ||
+    combined.includes('500 KVA')
+  )
+    return 'Grupo Gerador 500KVA';
+
+  return null;
+}
+
 const identifyModel = (nome: string, patrimonio: string): string => {
   const n = normalizeString(nome);
   const p = normalizeString(patrimonio);
@@ -35,122 +176,14 @@ const identifyModel = (nome: string, patrimonio: string): string => {
   )
     return 'Torre Convencional';
 
-  // Geradores - Novas Regras de Classes Comerciais
+  // Geradores - CLASSES COMERCIAIS OFICIAIS (não usar apenas potência exata do nome)
   const isGerador =
     combined.includes('GERADOR') || combined.includes('KVA') || p.match(/^(GG|GA|CG|GS|GH|GB|GW)/);
   if (isGerador) {
-    // 1) Grupo Gerador 19KVA
-    if (combined.includes('19 KVA') || combined.includes('19KVA')) return 'Grupo Gerador 19KVA';
+    const categoria = categorizeGrupoGerador(nome, patrimonio);
+    if (categoria) return categoria;
 
-    // 2) Grupo Gerador 22KVA
-    if (combined.includes('PRAMAC 22') || combined.includes('22 KVA')) return 'Grupo Gerador 22KVA';
-
-    // 3) Grupo Gerador 33KVA
-    if (combined.includes('33 KVA') || combined.includes('33KVA')) return 'Grupo Gerador 33KVA';
-
-    // 4) Grupo Gerador 55KVA (Faixa 48 a 60 KVA e Regras Especiais)
-    if (
-      combined.includes('QAS 55') ||
-      combined.includes('C40D6') ||
-      combined.includes('53 KVA') ||
-      combined.includes('STEMAC 55/50') ||
-      combined.includes('WACKER 52') ||
-      combined.includes('PRAMAC 60') ||
-      combined.includes('GENERAC 59') ||
-      combined.includes('BRANCO 48') ||
-      combined.includes('55 KVA') ||
-      combined.includes('60 KVA')
-    ) {
-      return 'Grupo Gerador 55KVA';
-    }
-
-    // 5) Grupo Gerador 81KVA (Faixa 75 a 81 KVA)
-    if (
-      combined.includes('STEMAC 81/78') ||
-      combined.includes('WACKER 75') ||
-      combined.includes('CUMMINS 81') ||
-      combined.includes('CUMMINS 80') ||
-      combined.includes('PRAMAC 80') ||
-      combined.includes('81 KVA') ||
-      combined.includes('80 KVA')
-    ) {
-      return 'Grupo Gerador 81KVA';
-    }
-
-    // 6) Grupo Gerador 120KVA (Faixa 105 a 127 KVA)
-    if (
-      combined.includes('QAS 105') ||
-      combined.includes('HIMOINSA 125') ||
-      combined.includes('WACKER 121') ||
-      combined.includes('GENERAC 127') ||
-      combined.includes('PRAMAC 127') ||
-      combined.includes('CUMMINS 116') ||
-      combined.includes('CUMMINS 120') ||
-      combined.includes('CUMMINS 125') ||
-      combined.includes('120 KVA') ||
-      combined.includes('127 KVA')
-    ) {
-      return 'Grupo Gerador 120KVA';
-    }
-
-    // 7) Grupo Gerador 150KVA (Faixa 140 a 150 KVA)
-    if (
-      combined.includes('CUMMINS 140') ||
-      combined.includes('CUMMINS 150') ||
-      combined.includes('GENERAC 140') ||
-      combined.includes('GENERAC 150') ||
-      combined.includes('STEMAC 150/141') ||
-      combined.includes('WACKER 150') ||
-      combined.includes('150 KVA') ||
-      combined.includes('140 KVA')
-    ) {
-      return 'Grupo Gerador 150KVA';
-    }
-
-    // 8) Grupo Gerador 170KVA
-    if (
-      combined.includes('CUMMINS 170') ||
-      combined.includes('STEMAC 180/168') ||
-      combined.includes('170 KVA')
-    )
-      return 'Grupo Gerador 170KVA';
-
-    // 9) Grupo Gerador 200KVA
-    if (
-      combined.includes('STEMAC 200/180') ||
-      combined.includes('CUMMINS 212') ||
-      combined.includes('200 KVA') ||
-      combined.includes('212 KVA')
-    )
-      return 'Grupo Gerador 200KVA';
-
-    // 10) Grupo Gerador 260KVA
-    if (
-      combined.includes('CUMMINS 260') ||
-      combined.includes('STEMAC 260/240') ||
-      combined.includes('260 KVA')
-    )
-      return 'Grupo Gerador 260KVA';
-
-    // 11) Grupo Gerador 360KVA
-    if (
-      combined.includes('CUMMINS 385') ||
-      combined.includes('STEMAC 360/325') ||
-      combined.includes('360 KVA') ||
-      combined.includes('385 KVA')
-    )
-      return 'Grupo Gerador 360KVA';
-
-    // 12) Grupo Gerador 500KVA
-    if (
-      combined.includes('CUMMINS 500') ||
-      combined.includes('GENERAC 500') ||
-      combined.includes('STEMAC 500/455') ||
-      combined.includes('500 KVA')
-    )
-      return 'Grupo Gerador 500KVA';
-
-    // Fallback numérico se não encontrar palavra-chave exata
+    // Fallback numérico por faixa (só quando não houver match por nome/modelo)
     const kvaMatch = combined.match(/(\d+)\s?KVA/);
     if (kvaMatch) {
       const v = parseInt(kvaMatch[1]);
