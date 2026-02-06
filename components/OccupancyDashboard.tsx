@@ -177,7 +177,7 @@ const OccupancyDashboard: React.FC<DashboardProps> = ({ data }) => {
                 {group.title}
               </h4>
               <div className="overflow-x-auto -mx-6 px-6 no-scrollbar">
-                <table className="w-full text-left min-w-[600px]">
+                <table className="w-full text-left min-w-[650px]">
                   <thead>
                     <tr className="border-b border-gray-50">
                       <th className="py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest">
@@ -191,6 +191,9 @@ const OccupancyDashboard: React.FC<DashboardProps> = ({ data }) => {
                       </th>
                       <th className="py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest text-center">
                         Locado
+                      </th>
+                      <th className="py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest text-center">
+                        Total
                       </th>
                       <th className="py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest text-right">
                         TO %
@@ -211,6 +214,9 @@ const OccupancyDashboard: React.FC<DashboardProps> = ({ data }) => {
                         </td>
                         <td className="py-4 text-[11px] text-accent font-black text-center bg-gray-50/50">
                           {item.locado}
+                        </td>
+                        <td className="py-4 text-[11px] text-accent font-black text-center">
+                          {item.total}
                         </td>
                         <td className="py-4 text-right">
                           <div className="flex items-center justify-end gap-3">

@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
-import { processRawData, normalizeString } from '../utils/dataProcessor';
+import { processRawData, normalizeString, ImportIssue } from '../utils/dataProcessor';
 import { Equipment } from '../types';
 import { supabase } from '../lib/supabase';
 
@@ -13,6 +13,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded }) => {
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [importIssues, setImportIssues] = useState<ImportIssue[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = async (file: File) => {
@@ -61,7 +62,9 @@ const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded }) => {
 
         setProgress(40);
 
-        const processed = processRawData(jsonData);
+        const issues: ImportIssue[] = [];
+        const processed = processRawData(jsonData, issues);
+        setImportIssues(issues);
         if (processed.length === 0) {
           throw new Error('Nenhum equipamento válido encontrado para processamento.');
         }
@@ -217,6 +220,49 @@ const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded }) => {
           </div>
         </div>
       </div>
+
+      {importIssues.length > 0 && (
+        <div className="mt-10 bg-white border border-amber-100 rounded-[2.5rem] p-6 md:p-8 shadow-sm">
+          <h3 className="text-sm md:text-base font-black text-amber-700 uppercase tracking-[0.25em] mb-3 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+            Linhas ignoradas na importação
+          </h3>
+          <p className="text-[10px] md:text-xs text-amber-900 font-medium mb-4">
+            {importIssues.length} registro(s) da planilha não foram carregados. Veja abaixo o motivo
+            para cada patrimônio.
+          </p>
+          <div className="max-h-64 overflow-auto rounded-2xl border border-amber-100">
+            <table className="w-full text-left text-[10px] md:text-xs">
+              <thead className="bg-amber-50">
+                <tr>
+                  <th className="px-4 py-2 font-black uppercase tracking-widest text-amber-800">
+                    Patrimônio
+                  </th>
+                  <th className="px-4 py-2 font-black uppercase tracking-widest text-amber-800">
+                    Nome
+                  </th>
+                  <th className="px-4 py-2 font-black uppercase tracking-widest text-amber-800">
+                    Motivo
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {importIssues.map((issue, index) => (
+                  <tr key={`${issue.patrimonio || 'sem-pat'}-${index}`} className="border-t border-amber-50">
+                    <td className="px-4 py-2 font-bold text-accent">
+                      {issue.patrimonio && issue.patrimonio.trim() !== '' ? issue.patrimonio : '—'}
+                    </td>
+                    <td className="px-4 py-2 text-gray-600">
+                      {issue.nome_bem && issue.nome_bem.trim() !== '' ? issue.nome_bem : '—'}
+                    </td>
+                    <td className="px-4 py-2 text-amber-800">{issue.reason}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
