@@ -16,31 +16,52 @@ export interface ImportIssue {
 
 // --- Funções de Categorização ---
 
-export function categorizeTorreIluminacao(nome: string, patrimonio?: string): string | null {
+export function categorizeTorreIluminacao(nome: string, patrimonio?: string, familia?: string): string | null {
   const n = normalizeString(nome);
   const p = normalizeString(patrimonio || '');
+  const f = normalizeString(familia || '');
   const combined = `${n} ${p}`;
 
-  const isTorre =
-    combined.includes('TORRE') ||
-    combined.includes('ILUMINACAO') ||
-    combined.includes('ILUMIN') ||
-    combined.includes('V5') ||
-    combined.includes('VS') ||
-    p.startsWith('AT');
+  // --- REGRA SUPREMA DA FAMÍLIA (TIL) ---
+  // Se a coluna família existe e NÃO é TIL, então NÃO é torre (evita pegar X-Treme 12VS, etc)
+  if (f && f !== 'TIL') return null;
+
+  // Se a família É 'TIL', com certeza é torre.
+  let isTorre = f === 'TIL';
+
+  // Se não tem família (planilha antiga/csv simples), usa a detecção por nome
+  if (!f) {
+    // REGRA DE SEGURANÇA: Excluir XMT/VS de solda se não tiver família para validar
+    if (combined.includes('XMT') || combined.includes('SUITCASE') || combined.includes('12VS')) return null;
+
+    isTorre =
+      combined.includes('TORRE') ||
+      combined.includes('ILUMINACAO') ||
+      combined.includes('ILUMIN') ||
+      combined.includes('V5') ||
+      combined.includes('HILIGHT') ||
+      p.startsWith('AT');
+  }
 
   if (!isTorre) return null;
 
+  // Daqui pra baixo, sabemos que é Torre. Agora definimos o MODELO.
   const includesAny = (keywords: string[]) => keywords.some((k) => combined.includes(k));
 
   if (includesAny(['V5+', 'VS+LED', 'VS+ LED', 'VS LED', 'VS-LED', 'V5 LED', 'HILIGHT V5']))
     return 'Torre de Iluminação V5+';
+  
   if (includesAny(['SOLAR', 'FOTOVOLTAICO', '300W', 'MOD04', 'MOD06', 'MOD08']))
     return 'Torre de Iluminação Solar';
+  
+  // REGRA: Torre Autônoma deve ter "TORRE" E "AUT"
+  // (Ou se for família TIL e tiver AUT no nome)
   if (includesAny(['AUT', 'AUT.', 'AUTON', 'AUTONOMA', '3TNV AUT']))
     return 'Torre de Iluminação Autônoma';
+  
   if (includesAny(['LED'])) return 'Torre de Iluminação LED';
 
+  // Se é TIL e não caiu em nenhuma específica, é Convencional
   return 'Torre de Iluminação Convencional';
 }
 
@@ -59,6 +80,12 @@ export function categorizeGrupoGerador(nome: string, patrimonio?: string): strin
 
   if (!isGerador) return null;
 
+  // --- REGRA ESPECÍFICA SOLICITADA: 200/180 ---
+  // Se tiver "200/180" ou "200 / 180", vai direto para 200KVA.
+  if (combined.includes('200/180') || combined.includes('200 / 180')) {
+      return 'Grupo Gerador 200KVA';
+  }
+
   const matchRegex = (r: RegExp) => r.test(combined);
   const kva = (n: number) => new RegExp(`\\b${n}(?:\\s*\\/\\s*\\d+)?\\s*KVA\\b`);
   const anyKva = (numbers: number[]) => numbers.some((x) => matchRegex(kva(x)));
@@ -68,11 +95,19 @@ export function categorizeGrupoGerador(nome: string, patrimonio?: string): strin
   if (anyKva([33])) return 'Grupo Gerador 33KVA';
   if (combined.includes('QAS 55') || anyKva([48, 52, 53, 55, 59, 60])) return 'Grupo Gerador 55KVA';
   if (anyKva([75, 80, 81])) return 'Grupo Gerador 81KVA';
-  if (combined.includes('QAS 105') || anyKva([105, 116, 120, 121, 125, 127]))
+  
+  // REGRA: Incluir 100KVA no grupo de 120KVA
+  if (combined.includes('QAS 105') || anyKva([100, 105, 116, 120, 121, 125, 127]))
     return 'Grupo Gerador 120KVA';
+  
   if (anyKva([140, 150])) return 'Grupo Gerador 150KVA';
-  if (anyKva([168, 170, 180])) return 'Grupo Gerador 170KVA';
-  if (anyKva([200, 212])) return 'Grupo Gerador 200KVA';
+  
+  // REGRA: 170KVA (Retirado 200/180 pela regra acima, mas mantemos faixa segura)
+  if (anyKva([168, 170])) return 'Grupo Gerador 170KVA';
+  
+  // REGRA: 200KVA
+  if (anyKva([180, 200, 212])) return 'Grupo Gerador 200KVA';
+  
   if (anyKva([260])) return 'Grupo Gerador 260KVA';
   if (anyKva([360, 385])) return 'Grupo Gerador 360KVA';
   if (
@@ -85,14 +120,16 @@ export function categorizeGrupoGerador(nome: string, patrimonio?: string): strin
   return null;
 }
 
-export const identifyModel = (nome: string, patrimonio: string): string => {
+export const identifyModel = (nome: string, patrimonio: string, familia?: string): string => {
   const n = normalizeString(nome);
   const p = normalizeString(patrimonio);
   const combined = `${n} ${p}`;
 
-  const torreCategoria = categorizeTorreIluminacao(nome, patrimonio);
+  // 1. Tenta Categorizar Torres (Agora com filtro de Família TIL)
+  const torreCategoria = categorizeTorreIluminacao(nome, patrimonio, familia);
   if (torreCategoria) return torreCategoria;
 
+  // 2. Tenta Categorizar Geradores
   const isGerador =
     combined.includes('GERADOR') ||
     combined.includes('KVA') ||
@@ -101,7 +138,8 @@ export const identifyModel = (nome: string, patrimonio: string): string => {
   if (isGerador) {
     const categoria = categorizeGrupoGerador(nome, patrimonio);
     if (categoria) return categoria;
-
+    
+    // Fallback numérico
     const kvaMatch = combined.match(/(\d+)\s?KVA/);
     if (kvaMatch) {
       const v = parseInt(kvaMatch[1]);
@@ -110,18 +148,17 @@ export const identifyModel = (nome: string, patrimonio: string): string => {
       if (v >= 30 && v <= 35) return 'Grupo Gerador 33KVA';
       if (v >= 48 && v <= 65) return 'Grupo Gerador 55KVA';
       if (v >= 75 && v <= 85) return 'Grupo Gerador 81KVA';
-      if (v >= 105 && v <= 127) return 'Grupo Gerador 120KVA';
+      if (v >= 100 && v <= 127) return 'Grupo Gerador 120KVA';
       if (v >= 140 && v <= 160) return 'Grupo Gerador 150KVA';
-      if (v >= 168 && v <= 185) return 'Grupo Gerador 170KVA';
-      if (v >= 200 && v <= 230) return 'Grupo Gerador 200KVA';
+      if (v >= 168 && v <= 175) return 'Grupo Gerador 170KVA';
+      if (v >= 180 && v <= 230) return 'Grupo Gerador 200KVA';
       if (v >= 240 && v <= 280) return 'Grupo Gerador 260KVA';
       if (v >= 300 && v <= 400) return 'Grupo Gerador 360KVA';
       if (v >= 450 && v <= 550) return 'Grupo Gerador 500KVA';
     }
   }
 
-  // --- FILTRO DE ACESSÓRIOS (CORREÇÃO MINI ROLO) ---
-  // Se for controle remoto, NÃO é equipamento principal.
+  // --- FILTRO DE ACESSÓRIOS ---
   if (
     combined.includes('CONTROLE') ||
     combined.includes('REMOTO') ||
@@ -130,24 +167,42 @@ export const identifyModel = (nome: string, patrimonio: string): string => {
     return 'Acessórios';
   }
 
-  // Solda & Outros
-  if (combined.includes('PIPEPRO')) return 'Solda PipePro';
-  if (combined.includes('PIPEWORX')) return 'Solda PipeWorx';
-  if (combined.includes('RANGER') || combined.includes('VANTAGE')) return 'Moto Soldadora';
-  if (combined.includes('MEGAFORCE')) return 'Megaforce 300i';
-  if (combined.includes('LHI')) return 'Solda LHI ESAB';
-  if (combined.includes('CST') || combined.includes('CST280')) return 'Inversora CST';
-  if (combined.includes('FLEXTEC')) return 'Flextec 450/650';
-  if (combined.includes('XMT') || combined.includes('XMT350')) return 'Solda XMT Miller';
-  if (combined.includes('CV400') || combined.includes('CV-400I')) return 'Fonte CV400';
-  if (combined.includes('LN25') || combined.includes('LN7') || combined.includes('LF72'))
-    return 'Alimentador de Arame';
-  if (combined.includes('X-TREME') || combined.includes('12VS') || combined.includes('SUITCASE'))
-    return 'Suitcase X-Treme';
-  if (combined.includes('ROBO') || combined.includes('BURRO') || p.startsWith('ET'))
-    return 'Robo Burro XL';
-  if (combined.includes('RT56') || combined.includes('RT82') || combined.includes('RTL-X-SC3') || combined.includes('RTX-SC2') || combined.includes('COMPACTADOR'))
-    return 'Mini Rolo';
+  // --- LISTA ESTRITA DE SOLDA E OUTROS ---
+
+  // X-Treme (Agora seguro, pois Torres TIL já foram filtradas)
+  if (combined.includes('X-TREME') || combined.includes('SUITCASE') || combined.includes('12VS')) return 'X-Treme';
+
+  if (combined.includes('12RC')) return '12RC';
+  if (combined.includes('LN25')) return 'LN25';
+  if (combined.includes('CST')) return 'CST';
+  if (combined.includes('V275')) return 'V275';
+  if (combined.includes('XMT')) return 'XMT';
+  if (combined.includes('V350')) return 'V350';
+
+  if (combined.includes('FLEXTEC')) {
+    if (combined.includes('450')) return 'Flextec 450';
+    if (combined.includes('650')) return 'Flextec 650';
+    return 'Flextec 450';
+  }
+
+  if (combined.includes('DC600') || combined.includes('DC-600') || combined.includes('IDEALARC 600')) return 'DC600';
+  if (combined.includes('DC1000') || combined.includes('DC-1000') || combined.includes('IDEALARC 1000')) return 'DC1000';
+  if (combined.includes('CV400') || combined.includes('CV-400')) return 'CV400';
+  if (combined.includes('TRAILBLAZER')) return 'Trailblazer';
+  if (combined.includes('RANGER')) return 'Ranger';
+
+  // Rolo Compactador
+  if (
+    combined.includes('RT56') || 
+    combined.includes('RT82') || 
+    combined.includes('RTL-X-SC3') || 
+    combined.includes('RTX-SC2') || 
+    combined.includes('ROLO') ||
+    combined.includes('COMPACTADOR') ||
+    combined.includes('CAMPACTADOR')
+  ) {
+    return 'Rolo compactador';
+  }
 
   return 'Outros';
 };
@@ -185,7 +240,7 @@ const detectState = (centro: string): 'MG' | 'PA' | 'Outro' => {
   return 'Outro';
 };
 
-// --- PROCESSAMENTO (SEM FILTRO DE STATUS) ---
+// --- PROCESSAMENTO PRINCIPAL ---
 export const processRawData = (data: any[], issues?: ImportIssue[]): Partial<Equipment>[] => {
   const processed: Partial<Equipment>[] = [];
 
@@ -199,12 +254,14 @@ export const processRawData = (data: any[], issues?: ImportIssue[]): Partial<Equ
     'cont. acum.': 'contador_acumulado',
     'ult. acomp.': 'ultima_atualizacao',
     'ano fabric.': 'ano_fabricacao',
+    'familia': 'familia' // MAPEAMENTO DA NOVA COLUNA
   };
 
   for (const row of data) {
     const normalizedRow: any = {};
     Object.keys(row).forEach((key) => {
       const normalizedKey = normalizeString(key).toLowerCase();
+      // Procura correspondência parcial (ex: "Desc. Família" vira "familia")
       const targetFieldKey = Object.keys(fieldMap).find(
         (fk) => normalizedKey === fk.toLowerCase() || normalizedKey.includes(fk.toLowerCase())
       );
@@ -214,23 +271,22 @@ export const processRawData = (data: any[], issues?: ImportIssue[]): Partial<Equ
 
     const pat = String(normalizedRow.patrimonio || '').trim();
     const nomeBem = String(normalizedRow.nome_bem || '').trim();
+    const familia = normalizedRow.familia ? String(normalizedRow.familia).trim() : undefined;
 
     if (!pat || pat === 'Patrimônio' || pat.toLowerCase() === 'patrimonio') {
       issues?.push({
         patrimonio: pat || undefined,
         nome_bem: nomeBem || undefined,
-        reason: 'Linha ignorada: patrimônio vazio ou cabeçalho da planilha.',
+        reason: 'Linha ignorada: patrimônio vazio ou cabeçalho.',
       });
       continue;
     }
 
-    // Removida checagem de duplicidade de 'seen' para garantir importação total
-    // Se desejar bloquear duplicatas, descomente a lógica de 'seen'
-
     processed.push({
       patrimonio: pat,
       nome_bem: normalizedRow.nome_bem || 'N/A',
-      modelo: identifyModel(normalizedRow.nome_bem || '', pat),
+      // Passa a FAMILIA para a função de identificação
+      modelo: identifyModel(normalizedRow.nome_bem || '', pat, familia),
       tipo: normalizeType(pat),
       status: normalizeStatus(normalizedRow.status),
       centro_trab: normalizedRow.centro_trab || 'Geral',
@@ -246,10 +302,9 @@ export const processRawData = (data: any[], issues?: ImportIssue[]): Partial<Equ
   return processed;
 };
 
-// --- CÁLCULOS DO DASHBOARD (COM FILTRO DE STATUS) ---
+// --- CÁLCULOS DO DASHBOARD ---
 
 export const calculateTO = (equipments: Equipment[]) => {
-  // Filtra APENAS ATIVOS para o cálculo
   const active = equipments.filter(
     (e) => e.status !== EquipmentStatus.INATIVO && e.status !== EquipmentStatus.VENDIDO
   );
@@ -269,10 +324,8 @@ export const getAggregates = (equipments: Equipment[]): Record<string, Aggregate
   const byModel: Record<string, AggregateItem> = {};
 
   equipments.forEach((e) => {
-    // Ignora INATIVO e VENDIDO nos gráficos e totais por modelo
+    // Ignora INATIVO, VENDIDO e ACESSÓRIOS
     if (e.status === EquipmentStatus.INATIVO || e.status === EquipmentStatus.VENDIDO) return;
-
-    // Também ignoramos Acessórios (controles, carregadores) para não poluir
     if (e.modelo === 'Acessórios') return;
 
     if (!byModel[e.modelo]) {
