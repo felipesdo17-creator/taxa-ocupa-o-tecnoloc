@@ -146,7 +146,7 @@ export const identifyModel = (nome: string, patrimonio: string): string => {
     return 'Suitcase X-Treme';
   if (combined.includes('ROBO') || combined.includes('BURRO') || p.startsWith('ET'))
     return 'Robo Burro XL';
-  if (combined.includes('RT56') || combined.includes('RT82') || combined.includes(' RTL-X-SC3') || combined.includes(' RTX-SC2'))
+  if (combined.includes('RT56') || combined.includes('RT82') || combined.includes('RTL-X-SC3') || combined.includes('RTX-SC2') || combined.includes('COMPACTADOR'))
     return 'Mini Rolo';
 
   return 'Outros';
