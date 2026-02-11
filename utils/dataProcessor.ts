@@ -23,15 +23,14 @@ export function categorizeTorreIluminacao(nome: string, patrimonio?: string, fam
   const combined = `${n} ${p}`;
 
   // --- REGRA SUPREMA DA FAMÍLIA (TIL) ---
-  // Se a coluna família existe e NÃO é TIL, então NÃO é torre (evita pegar X-Treme 12VS, etc)
+  // Se a coluna família existe e NÃO é TIL, então NÃO é torre.
   if (f && f !== 'TIL') return null;
 
   // Se a família É 'TIL', com certeza é torre.
   let isTorre = f === 'TIL';
 
-  // Se não tem família (planilha antiga/csv simples), usa a detecção por nome
+  // Se não tem família (fallback), usa a detecção por nome
   if (!f) {
-    // REGRA DE SEGURANÇA: Excluir XMT/VS de solda se não tiver família para validar
     if (combined.includes('XMT') || combined.includes('SUITCASE') || combined.includes('12VS')) return null;
 
     isTorre =
@@ -45,7 +44,6 @@ export function categorizeTorreIluminacao(nome: string, patrimonio?: string, fam
 
   if (!isTorre) return null;
 
-  // Daqui pra baixo, sabemos que é Torre. Agora definimos o MODELO.
   const includesAny = (keywords: string[]) => keywords.some((k) => combined.includes(k));
 
   if (includesAny(['V5+', 'VS+LED', 'VS+ LED', 'VS LED', 'VS-LED', 'V5 LED', 'HILIGHT V5']))
@@ -54,14 +52,11 @@ export function categorizeTorreIluminacao(nome: string, patrimonio?: string, fam
   if (includesAny(['SOLAR', 'FOTOVOLTAICO', '300W', 'MOD04', 'MOD06', 'MOD08']))
     return 'Torre de Iluminação Solar';
   
-  // REGRA: Torre Autônoma deve ter "TORRE" E "AUT"
-  // (Ou se for família TIL e tiver AUT no nome)
   if (includesAny(['AUT', 'AUT.', 'AUTON', 'AUTONOMA', '3TNV AUT']))
     return 'Torre de Iluminação Autônoma';
   
   if (includesAny(['LED'])) return 'Torre de Iluminação LED';
 
-  // Se é TIL e não caiu em nenhuma específica, é Convencional
   return 'Torre de Iluminação Convencional';
 }
 
@@ -80,8 +75,7 @@ export function categorizeGrupoGerador(nome: string, patrimonio?: string): strin
 
   if (!isGerador) return null;
 
-  // --- REGRA ESPECÍFICA SOLICITADA: 200/180 ---
-  // Se tiver "200/180" ou "200 / 180", vai direto para 200KVA.
+  // --- REGRA ESPECÍFICA: 200/180 ---
   if (combined.includes('200/180') || combined.includes('200 / 180')) {
       return 'Grupo Gerador 200KVA';
   }
@@ -96,18 +90,12 @@ export function categorizeGrupoGerador(nome: string, patrimonio?: string): strin
   if (combined.includes('QAS 55') || anyKva([48, 52, 53, 55, 59, 60])) return 'Grupo Gerador 55KVA';
   if (anyKva([75, 80, 81])) return 'Grupo Gerador 81KVA';
   
-  // REGRA: Incluir 100KVA no grupo de 120KVA
   if (combined.includes('QAS 105') || anyKva([100, 105, 116, 120, 121, 125, 127]))
     return 'Grupo Gerador 120KVA';
   
   if (anyKva([140, 150])) return 'Grupo Gerador 150KVA';
-  
-  // REGRA: 170KVA (Retirado 200/180 pela regra acima, mas mantemos faixa segura)
   if (anyKva([168, 170])) return 'Grupo Gerador 170KVA';
-  
-  // REGRA: 200KVA
   if (anyKva([180, 200, 212])) return 'Grupo Gerador 200KVA';
-  
   if (anyKva([260])) return 'Grupo Gerador 260KVA';
   if (anyKva([360, 385])) return 'Grupo Gerador 360KVA';
   if (
@@ -120,12 +108,13 @@ export function categorizeGrupoGerador(nome: string, patrimonio?: string): strin
   return null;
 }
 
-export const identifyModel = (nome: string, patrimonio: string, familia?: string): string => {
+export const identifyModel = (nome: string, patrimonio: string, familia?: string, tipoModelo?: string): string => {
   const n = normalizeString(nome);
   const p = normalizeString(patrimonio);
+  const tm = normalizeString(tipoModelo || ''); // Normaliza o código do modelo (MSM...)
   const combined = `${n} ${p}`;
 
-  // 1. Tenta Categorizar Torres (Agora com filtro de Família TIL)
+  // 1. Tenta Categorizar Torres (Usa Família TIL)
   const torreCategoria = categorizeTorreIluminacao(nome, patrimonio, familia);
   if (torreCategoria) return torreCategoria;
 
@@ -167,12 +156,26 @@ export const identifyModel = (nome: string, patrimonio: string, familia?: string
     return 'Acessórios';
   }
 
-  // --- LISTA ESTRITA DE SOLDA E OUTROS ---
+  // --- REGRAS PELO "TIPO MODELO" (PRIORIDADE ALTA) ---
+  
+  // Regra: X-TREME (MSM006 e MSM007)
+  if (tm === 'MSM006' || tm === 'MSM007') {
+    return 'X-Treme';
+  }
 
-  // X-Treme (Agora seguro, pois Torres TIL já foram filtradas)
+  // Regra: 12RC (MSM008 e MSM009)
+  if (tm === 'MSM008' || tm === 'MSM009') {
+    return '12RC';
+  }
+
+  // --- LISTA ESTRITA DE SOLDA E OUTROS (POR NOME) ---
+
+  // X-Treme (Fallback por nome se não tiver código)
   if (combined.includes('X-TREME') || combined.includes('SUITCASE') || combined.includes('12VS')) return 'X-Treme';
 
+  // 12RC (Fallback por nome)
   if (combined.includes('12RC')) return '12RC';
+
   if (combined.includes('LN25')) return 'LN25';
   if (combined.includes('CST')) return 'CST';
   if (combined.includes('V275')) return 'V275';
@@ -254,14 +257,15 @@ export const processRawData = (data: any[], issues?: ImportIssue[]): Partial<Equ
     'cont. acum.': 'contador_acumulado',
     'ult. acomp.': 'ultima_atualizacao',
     'ano fabric.': 'ano_fabricacao',
-    'familia': 'familia' // MAPEAMENTO DA NOVA COLUNA
+    'familia': 'familia',
+    'tipo modelo': 'tipo_modelo' // NOVA COLUNA MAPEADA
   };
 
   for (const row of data) {
     const normalizedRow: any = {};
     Object.keys(row).forEach((key) => {
       const normalizedKey = normalizeString(key).toLowerCase();
-      // Procura correspondência parcial (ex: "Desc. Família" vira "familia")
+      // Procura correspondência parcial
       const targetFieldKey = Object.keys(fieldMap).find(
         (fk) => normalizedKey === fk.toLowerCase() || normalizedKey.includes(fk.toLowerCase())
       );
@@ -272,6 +276,7 @@ export const processRawData = (data: any[], issues?: ImportIssue[]): Partial<Equ
     const pat = String(normalizedRow.patrimonio || '').trim();
     const nomeBem = String(normalizedRow.nome_bem || '').trim();
     const familia = normalizedRow.familia ? String(normalizedRow.familia).trim() : undefined;
+    const tipoModelo = normalizedRow.tipo_modelo ? String(normalizedRow.tipo_modelo).trim() : undefined;
 
     if (!pat || pat === 'Patrimônio' || pat.toLowerCase() === 'patrimonio') {
       issues?.push({
@@ -285,8 +290,8 @@ export const processRawData = (data: any[], issues?: ImportIssue[]): Partial<Equ
     processed.push({
       patrimonio: pat,
       nome_bem: normalizedRow.nome_bem || 'N/A',
-      // Passa a FAMILIA para a função de identificação
-      modelo: identifyModel(normalizedRow.nome_bem || '', pat, familia),
+      // Passa a FAMILIA e TIPO MODELO para a função de identificação
+      modelo: identifyModel(normalizedRow.nome_bem || '', pat, familia, tipoModelo),
       tipo: normalizeType(pat),
       status: normalizeStatus(normalizedRow.status),
       centro_trab: normalizedRow.centro_trab || 'Geral',
