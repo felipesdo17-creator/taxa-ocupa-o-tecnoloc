@@ -57,7 +57,7 @@ const OccupancyDashboard: React.FC<DashboardProps> = ({ data }) => {
   }, [aggregates]);
 
   const ChartSection = ({ title, data }: { title: string; data: any[] }) => (
-    <div className="bg-white p-6 md:p-10 rounded-[2.5rem] border border-gray-100 shadow-sm mb-8">
+    <div className="bg-white p-5 md:p-10 rounded-[2.5rem] border border-gray-100 shadow-sm mb-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div>
           <h3 className="text-xl font-black text-accent uppercase tracking-tighter">{title}</h3>
@@ -77,24 +77,25 @@ const OccupancyDashboard: React.FC<DashboardProps> = ({ data }) => {
           </div>
         </div>
       </div>
-      <div className="h-[300px] md:h-[400px] w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 60 }}>
+      <div className="-mx-2 overflow-x-auto pb-2 md:mx-0 md:overflow-visible">
+        <div className="h-[360px] md:h-[400px] min-w-[720px] md:min-w-0 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 70 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
             <XAxis
               dataKey="name"
               axisLine={false}
               tickLine={false}
-              tick={{ fill: '#94a3b8', fontSize: 9, fontWeight: 700 }}
+              tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }}
               interval={0}
               angle={-45}
               textAnchor="end"
-              height={80}
+              height={90}
             />
             <YAxis
               axisLine={false}
               tickLine={false}
-              tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }}
+              tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 700 }}
             />
             <Tooltip
               cursor={{ fill: '#f8fafc' }}
@@ -107,9 +108,10 @@ const OccupancyDashboard: React.FC<DashboardProps> = ({ data }) => {
             />
             <Bar dataKey="liberado" fill="#3b82f6" radius={[6, 6, 0, 0]} barSize={12} />
             <Bar dataKey="manutencao" fill="#f97316" radius={[6, 6, 0, 0]} barSize={12} />
-            <Bar dataKey="locado" fill="#0F172A" radius={[6, 6, 0, 0]} barSize={12} />
-          </BarChart>
-        </ResponsiveContainer>
+            <Bar dataKey="locado" fill="#0F172A" radius={[6, 6, 0, 0]} barSize={16} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
     </div>
   );
@@ -142,7 +144,7 @@ const OccupancyDashboard: React.FC<DashboardProps> = ({ data }) => {
       </div>
 
       {/* KPI Grid - Mobile Responsive */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">
         <KpiCard
           title="Ocupação Média"
           value={`${stats.rate.toFixed(1)}%`}

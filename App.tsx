@@ -9,7 +9,7 @@ import UserManagement from './components/UserManagement';
 import ChatAssistant from './components/ChatAssistant';
 import InstallAppButton from './components/InstallAppButton';
 import { Equipment } from './types';
-import { RefreshCw, UserCircle, AlertTriangle, CloudOff } from 'lucide-react';
+import { RefreshCw, UserCircle, AlertTriangle, CloudOff, Menu } from 'lucide-react';
 
 const App: React.FC = () => {
   const [session, setSession] = useState<any>(null);
@@ -19,6 +19,7 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -116,7 +117,7 @@ const App: React.FC = () => {
   if (!session) return <Login onSuccess={() => {}} />;
 
   const role = userProfile?.role || 'USUARIO';
-  const mainOffset = isSidebarCollapsed ? 'ml-20' : 'ml-64';
+  const mainOffset = isSidebarCollapsed ? 'md:ml-20' : 'md:ml-64';
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] text-accent">
@@ -127,25 +128,35 @@ const App: React.FC = () => {
         onLogout={handleLogout}
         isCollapsed={isSidebarCollapsed}
         setIsCollapsed={setIsSidebarCollapsed}
+        isMobileOpen={isMobileSidebarOpen}
+        setIsMobileOpen={setIsMobileSidebarOpen}
       />
 
       <main className={`transition-all duration-500 ease-in-out ${mainOffset}`}>
         <header className="sticky top-0 z-30 border-b border-gray-100 bg-white/95 px-4 py-4 backdrop-blur-xl md:flex md:items-center md:justify-between md:bg-white md:px-12 md:py-6">
-          <div className="md:flex-1">
-            <h1 className="text-2xl md:text-4xl font-black tracking-tighter uppercase italic">
-              {activeTab === 'dashboard'
-                ? 'Ocupacao'
-                : activeTab === 'equipments'
-                  ? 'Frota'
-                  : activeTab === 'upload'
-                    ? 'Importacao'
-                    : 'Gestao'}
-            </h1>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
-              <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">
-                Perfil: {role} • {equipmentData.length} ativos
-              </p>
+          <div className="flex items-start gap-3 md:block">
+            <button
+              onClick={() => setIsMobileSidebarOpen(true)}
+              className="mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-gray-100 bg-white text-accent shadow-sm transition-all hover:text-primary md:hidden"
+            >
+              <Menu size={20} />
+            </button>
+            <div className="min-w-0">
+              <h1 className="text-2xl md:text-4xl font-black tracking-tighter uppercase italic">
+                {activeTab === 'dashboard'
+                  ? 'Ocupacao'
+                  : activeTab === 'equipments'
+                    ? 'Frota'
+                    : activeTab === 'upload'
+                      ? 'Importacao'
+                      : 'Gestao'}
+              </h1>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
+                <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">
+                  Perfil: {role} • {equipmentData.length} ativos
+                </p>
+              </div>
             </div>
           </div>
 
