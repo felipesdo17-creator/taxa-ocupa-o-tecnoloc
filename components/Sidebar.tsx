@@ -1,13 +1,5 @@
 import React from 'react';
-import {
-  BarChart3,
-  Package,
-  Upload,
-  ChevronLeft,
-  ChevronRight,
-  LogOut,
-  Users,
-} from 'lucide-react';
+import { BarChart3, Package, Upload, ChevronLeft, ChevronRight, LogOut, Users, LucideIcon } from 'lucide-react';
 
 interface SidebarProps {
   activeTab: string;
@@ -18,6 +10,25 @@ interface SidebarProps {
   setIsCollapsed: (val: boolean) => void;
 }
 
+interface NavItem {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  roles: string[];
+}
+
+const NAVIGATION_ITEMS: NavItem[] = [
+  { id: 'dashboard', label: 'Dashboard', icon: BarChart3, roles: ['USUARIO', 'GESTOR', 'ADMIN'] },
+  {
+    id: 'equipments',
+    label: 'Equipamentos',
+    icon: Package,
+    roles: ['USUARIO', 'GESTOR', 'ADMIN'],
+  },
+  { id: 'upload', label: 'Importar Dados', icon: Upload, roles: ['GESTOR', 'ADMIN'] },
+  { id: 'users', label: 'Gestão de Acesso', icon: Users, roles: ['ADMIN'] },
+];
+
 const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
   setActiveTab,
@@ -26,19 +37,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   isCollapsed,
   setIsCollapsed,
 }) => {
-  const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: BarChart3, roles: ['USUARIO', 'GESTOR', 'ADMIN'] },
-    {
-      id: 'equipments',
-      label: 'Equipamentos',
-      icon: Package,
-      roles: ['USUARIO', 'GESTOR', 'ADMIN'],
-    },
-    { id: 'upload', label: 'Importar Dados', icon: Upload, roles: ['GESTOR', 'ADMIN'] },
-    { id: 'users', label: 'Gestão de Acesso', icon: Users, roles: ['ADMIN'] },
-  ];
-
-  const filteredItems = navItems.filter((item) => item.roles.includes(userRole));
+  const filteredItems = NAVIGATION_ITEMS.filter((item) => item.roles.includes(userRole));
 
   return (
     <aside
@@ -51,6 +50,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           <div className="flex flex-col animate-in fade-in duration-500">
             <span className="font-black text-2xl italic tracking-tighter text-primary">
               TECNOLOC
+              <span className="ml-2 text-xs bg-white text-accent px-2 py-1 rounded">DEV</span>
             </span>
             <span className="text-[8px] font-bold uppercase text-gray-400 tracking-[0.2em]">
               Frota Inteligente
@@ -63,7 +63,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         )}
       </div>
 
-      <nav className="flex-1 py-8 px-3 space-y-2">
+      <nav className="flex-1 py-6 px-3 space-y-3">
         {filteredItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
@@ -71,19 +71,25 @@ const Sidebar: React.FC<SidebarProps> = ({
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center gap-4 px-4 py-4 rounded-2xl transition-all duration-300 group relative ${
+              className={`w-full flex items-center gap-4 rounded-2xl transition-all duration-300 group relative ${
                 isActive
-                  ? 'bg-primary text-white shadow-xl shadow-primary/20'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  ? 'px-6 py-4 bg-primary text-white shadow-[0_12px_28px_rgba(255,107,0,0.14)]'
+                  : 'px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5'
               }`}
               title={isCollapsed ? item.label : ''}
             >
-              <Icon
-                size={22}
-                className={isActive ? 'text-white' : 'group-hover:text-primary transition-colors'}
-              />
+              <div
+                className={`p-2.5 rounded-2xl transition-all duration-300 ${
+                  isActive ? 'bg-white/10' : ''
+                }`}
+              >
+                <Icon
+                  size={isActive ? 24 : 20}
+                  className={isActive ? 'text-white' : 'group-hover:text-primary'}
+                />
+              </div>
               {!isCollapsed && (
-                <span className="font-bold text-xs truncate animate-in slide-in-from-left-2 uppercase tracking-wider">
+                <span className="font-bold text-sm truncate animate-in slide-in-from-left-2 uppercase tracking-wider">
                   {item.label}
                 </span>
               )}

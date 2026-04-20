@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
-import { processRawData, normalizeString } from '../utils/dataProcessor';
+import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2, Info } from 'lucide-react';
+import { processRawData, normalizeString, ImportIssue } from '../utils/dataProcessor';
 import { Equipment } from '../types';
 import { supabase } from '../lib/supabase';
 
@@ -13,108 +13,103 @@ const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded }) => {
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null); // Novo estado para avisos
+  const [importIssues, setImportIssues] = useState<ImportIssue[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = async (file: File) => {
     const XLSX = (window as any).XLSX;
-    if (!XLSX) {
-      setError('Erro de Sistema: Biblioteca SheetJS (XLSX) não detectada.');
-      return;
-    }
-
-    if (!supabase) {
-      setError('Erro de Sistema: Conexão com Supabase não inicializada.');
-      return;
-    }
+    
+    // Verificações iniciais
+    if (!XLSX) return setError('Erro de Sistema: Biblioteca XLSX não encontrada.');
+    if (!supabase) return setError('Erro de Sistema: Supabase não conectado.');
 
     setLoading(true);
     setError(null);
+    setWarning(null);
     setProgress(10);
+    setImportIssues([]);
 
-    // Passo 1: Leitura Local do Arquivo
     const reader = new FileReader();
+
     reader.onload = async (e) => {
       try {
-        const arrayBuffer = e.target?.result;
-        if (!(arrayBuffer instanceof ArrayBuffer)) {
-          throw new Error('Falha na leitura do arquivo.');
-        }
-
-        const data = new Uint8Array(arrayBuffer);
+        // 1. Leitura do Arquivo
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: 'array' });
         const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-        const rawRows: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-        const searchTerm = normalizeString('Patrimônio');
+        // Encontrar cabeçalho (linha do "Patrimônio")
+        const rawRows: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
         const headerRowIndex = rawRows.findIndex((row) =>
-          row.some((cell) => normalizeString(String(cell || '')).includes(searchTerm))
+          row.some((cell) => normalizeString(String(cell || '')).includes('PATRIMONIO'))
         );
 
-        if (headerRowIndex === -1) {
-          throw new Error('Coluna "Patrimônio" não encontrada na planilha.');
-        }
+        if (headerRowIndex === -1) throw new Error('Coluna "Patrimônio" não encontrada.');
 
+        // Converter para JSON a partir do cabeçalho
         const jsonData = XLSX.utils.sheet_to_json(worksheet, {
           range: headerRowIndex,
-          defval: '',
+          defval: '', // Garante que células vazias não quebrem a leitura
+          blankrows: false
         });
+
+        console.log(`Linhas brutas detectadas: ${jsonData.length}`);
+        
+        // --- TRAVA DE SEGURANÇA: ALERTA DE 1000 LINHAS ---
+        if (jsonData.length === 1000) {
+          setWarning(
+            "Atenção: O arquivo possui EXATAMENTE 1000 linhas. Isso geralmente indica que a exportação do sistema foi cortada na primeira página."
+          );
+        }
 
         setProgress(40);
 
-        const processed = processRawData(jsonData);
-        if (processed.length === 0) {
-          throw new Error('Nenhum equipamento válido encontrado para processamento.');
-        }
+        // 2. Processamento (Sem filtros de Status)
+        const issues: ImportIssue[] = [];
+        const processed = processRawData(jsonData, issues);
+        setImportIssues(issues);
+
+        if (processed.length === 0) throw new Error('Nenhum dado válido encontrado.');
 
         setProgress(60);
 
-        // Passo 2: Upload opcional para Storage (tentamos, mas não bloqueamos se o bucket não existir)
-        try {
-          await supabase.storage
-            .from('uploads')
-            .upload(`planilhas/${Date.now()}_${file.name}`, file, {
-              cacheControl: '3600',
-              upsert: true,
-            });
-        } catch (sErr) {
-          console.warn('Storage inacessível, continuando apenas com o Banco de Dados.', sErr);
-        }
-
-        setProgress(70);
-
-        // Passo 3: Limpeza e Inserção no Banco de Dados
-        // Para uma sincronização de frota, geralmente limpamos e inserimos os novos dados
-        // ou usamos uma lógica de UPSERT baseada no patrimônio.
-
-        // Aqui, removemos os dados antigos para garantir que o dashboard reflita exatamente a planilha enviada
+        // 3. Limpeza do Banco de Dados (Reset Total)
         const { error: deleteError } = await supabase
           .from('equipments')
           .delete()
-          .not('id', 'is', null); // Limpa tudo
+          .not('id', 'is', null);
 
         if (deleteError) throw deleteError;
 
-        const { error: insertError } = await (supabase.from('equipments') as any).insert(processed);
+        setProgress(80);
 
-        if (insertError) throw insertError;
+        // 4. Inserção em Lotes (Batch Insert) para aguentar 3000+ itens
+        const BATCH_SIZE = 500;
+        for (let i = 0; i < processed.length; i += BATCH_SIZE) {
+          const batch = processed.slice(i, i + BATCH_SIZE);
+          const { error: insertError } = await (supabase.from('equipments') as any).insert(batch);
+          if (insertError) throw insertError;
+        }
 
         setProgress(100);
 
-        // Feedback visual de sucesso
+        // Sucesso
         setTimeout(() => {
           onDataLoaded(processed as Equipment[]);
           setLoading(false);
-          alert(`Sucesso! ${processed.length} equipamentos foram sincronizados.`);
+          alert(`Sucesso! ${processed.length} equipamentos carregados.`);
         }, 500);
+
       } catch (err: any) {
-        console.error('Erro no processamento:', err);
-        setError(err.message || 'Erro inesperado no processamento.');
+        console.error(err);
+        setError(err.message || 'Erro desconhecido ao processar.');
         setLoading(false);
       }
     };
 
     reader.onerror = () => {
-      setError('Erro físico de leitura do arquivo no navegador.');
+      setError('Erro ao ler o arquivo físico.');
       setLoading(false);
     };
 
@@ -124,22 +119,16 @@ const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded }) => {
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (file) handleFile(file);
+    if (e.dataTransfer.files?.[0]) handleFile(e.dataTransfer.files[0]);
   };
 
   return (
     <div className="max-w-4xl mx-auto mt-12 px-4">
       <div
         className={`border-2 border-dashed rounded-3xl p-12 text-center transition-all ${
-          isDragging
-            ? 'border-primary bg-primary/5 scale-105'
-            : 'border-gray-200 bg-white shadow-sm'
+          isDragging ? 'border-primary bg-primary/5 scale-105' : 'border-gray-200 bg-white shadow-sm'
         }`}
-        onDragOver={(e) => {
-          e.preventDefault();
-          setIsDragging(true);
-        }}
+        onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
         onDragLeave={() => setIsDragging(false)}
         onDrop={onDrop}
       >
@@ -149,12 +138,12 @@ const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded }) => {
               <Upload size={32} />
             </div>
             <h2 className="text-2xl font-black text-accent mb-2 uppercase tracking-tighter italic">
-              Sincronizar Frota
+              Importar Frota Completa
             </h2>
             <p className="text-gray-500 mb-8 max-w-sm mx-auto leading-relaxed text-xs font-medium">
-              Arraste a planilha de equipamentos aqui. O sistema atualizará o banco de dados e
-              recalculará as taxas de ocupação instantaneamente.
+              Arraste seu arquivo único (.xlsx ou .csv) contendo todos os equipamentos.
             </p>
+            
             <input
               type="file"
               ref={fileInputRef}
@@ -162,61 +151,64 @@ const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded }) => {
               accept=".xlsx,.csv"
               onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
             />
+            
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="px-10 py-4 bg-accent text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:bg-black active:scale-95 transition-all"
+              className="px-10 py-4 bg-accent text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:bg-black transition-all"
             >
-              Escolher Arquivo
+              Selecionar Arquivo
             </button>
           </>
         ) : (
           <div className="py-10">
-            <div className="relative w-20 h-20 mx-auto mb-8">
-              <Loader2 className="animate-spin text-primary w-full h-full" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-[10px] font-black text-primary">{progress}%</span>
-              </div>
-            </div>
-            <h3 className="text-xl font-black text-accent mb-4 uppercase tracking-tighter italic">
-              Sincronizando Sistemas...
-            </h3>
-            <div className="w-full max-w-md mx-auto h-2 bg-gray-100 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-primary transition-all duration-300"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
+            <Loader2 className="animate-spin text-primary w-12 h-12 mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-accent">Processando...</h3>
+            <p className="text-sm text-gray-500">{progress}% concluído</p>
           </div>
         )}
 
+        {/* Exibição de Erros */}
         {error && (
-          <div className="mt-8 p-4 bg-red-50 rounded-2xl border border-red-100 flex items-center gap-3 text-red-600 text-[10px] font-bold uppercase tracking-wider animate-shake">
-            <AlertCircle size={18} className="shrink-0" />
-            <span className="text-left">{error}</span>
+          <div className="mt-8 p-4 bg-red-50 rounded-2xl border border-red-100 flex items-center gap-3 text-red-600 text-xs font-bold uppercase animate-shake">
+            <AlertCircle size={18} /> {error}
+          </div>
+        )}
+
+        {/* Exibição de Alertas (Ex: Arquivo cortado em 1000) */}
+        {warning && (
+          <div className="mt-4 p-4 bg-yellow-50 rounded-2xl border border-yellow-200 flex items-center gap-3 text-yellow-800 text-xs font-bold text-left">
+            <Info size={24} className="shrink-0" />
+            <span>{warning}</span>
           </div>
         )}
       </div>
 
-      <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 opacity-60">
-        <div className="flex gap-4 p-5 rounded-2xl bg-white border border-gray-100">
-          <FileSpreadsheet className="text-blue-500 shrink-0" size={20} />
-          <div className="text-[9px] font-black uppercase tracking-widest text-accent">
-            Parsing SheetJS v0.20
+      {/* Tabela de Ignorados (se houver) */}
+      {importIssues.length > 0 && (
+        <div className="mt-10 bg-white border border-amber-100 rounded-2xl p-6 shadow-sm">
+          <h3 className="text-amber-700 font-bold mb-2 flex items-center gap-2">
+            <AlertCircle size={16} /> Linhas não importadas: {importIssues.length}
+          </h3>
+          <div className="max-h-64 overflow-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="text-amber-800 border-b border-amber-100">
+                  <th className="py-2">Patrimônio</th>
+                  <th>Motivo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {importIssues.map((issue, idx) => (
+                  <tr key={idx} className="border-b border-amber-50 text-gray-600">
+                    <td className="py-2 font-mono">{issue.patrimonio || '-'}</td>
+                    <td>{issue.reason}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
-        <div className="flex gap-4 p-5 rounded-2xl bg-white border border-gray-100">
-          <CheckCircle className="text-green-500 shrink-0" size={20} />
-          <div className="text-[9px] font-black uppercase tracking-widest text-accent">
-            DB Sync Supabase
-          </div>
-        </div>
-        <div className="flex gap-4 p-5 rounded-2xl bg-white border border-gray-100">
-          <Upload className="text-primary shrink-0" size={20} />
-          <div className="text-[9px] font-black uppercase tracking-widest text-accent">
-            Recalibração TO
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   );
 };

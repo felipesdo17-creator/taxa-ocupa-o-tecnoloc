@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+@theme {
+  /* Cores customizadas (Tecnoloc) - equivalentes ao tailwind.config.js */
+  --color-primary: #FF6B00;
+  --color-primary-dark: #E66000;
+  --color-primary-light: #FFE8D0;
+  --color-secondary: #64748b;
+  --color-secondary-light: #F1F5F9;
+  --color-accent: #0F172A;
+  --color-accent-light: #F8F9FA;
+}

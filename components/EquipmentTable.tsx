@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Eye,
   MapPin,
+  Barcode, // Importei um ícone para ilustrar a série (opcional)
 } from 'lucide-react';
 import { Equipment, EquipmentStatus } from '../types';
 
@@ -188,6 +189,10 @@ const EquipmentTable: React.FC<EquipmentTableProps> = ({ data }) => {
               <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                 Ativo / Modelo
               </th>
+              {/* NOVA COLUNA: SÉRIE */}
+              <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                Série
+              </th>
               <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                 Ano / Estado
               </th>
@@ -216,6 +221,16 @@ const EquipmentTable: React.FC<EquipmentTableProps> = ({ data }) => {
                     </span>
                   </div>
                 </td>
+                
+                {/* DADOS DA NOVA COLUNA: SÉRIE */}
+                <td className="px-6 py-4">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-1 bg-gray-50 border border-gray-100 rounded-md text-[11px] font-mono font-bold text-gray-600">
+                      {item.numero_serie}
+                    </span>
+                  </div>
+                </td>
+
                 <td className="px-6 py-4">
                   <div className="flex flex-col">
                     <span className="text-sm font-bold text-accent">{item.ano_fabricacao}</span>

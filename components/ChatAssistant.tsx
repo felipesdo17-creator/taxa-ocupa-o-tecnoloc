@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Sparkles, Send, X, Loader2 } from 'lucide-react';
-import { GoogleGenAI } from '@google/genai';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { Sparkles, Send, X, Bot, Loader2 } from 'lucide-react';
+import OpenAI from 'openai';
 import { Equipment } from '../types';
 
 interface ChatAssistantProps {
@@ -8,7 +8,7 @@ interface ChatAssistantProps {
 }
 
 interface Message {
-  role: 'user' | 'assistant';
+  role: 'user' | 'assistant' | 'system';
   content: string;
 }
 
@@ -19,11 +19,20 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({ fleetData }) => {
     {
       role: 'assistant',
       content:
-        'Olá! Sou o assistente inteligente da Tecnoloc. Como posso ajudar com a análise da sua frota hoje?',
+        'Olá! Sou o especialista de frota da Tecnoloc. Analiso a base integral de 3.167 equipamentos. Como posso ajudar hoje?',
     },
   ]);
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Otimização de Contexto: Converte a frota para CSV compacto para economizar tokens
+  const optimizedFleetContext = useMemo(() => {
+    const header = "PAT,MOD,STATUS,EST,FAM,TIPO_MOD";
+    const rows = fleetData.map(e => 
+      `${e.patrimonio},${e.modelo},${e.status},${e.estado},${(e as any).familia || ''},${(e as any).tipo_modelo || ''}`
+    ).join('\n');
+    return `${header}\n${rows}`;
+  }, [fleetData]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -36,76 +45,53 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({ fleetData }) => {
 
     const userMessage = input.trim();
     setInput('');
-    setMessages((prev) => [...prev, { role: 'user', content: userMessage }]);
+    const newHistory: Message[] = [...messages, { role: 'user', content: userMessage }];
+    setMessages(newHistory);
     setIsTyping(true);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
-
-      const compactData = fleetData
-        .map((e) => ({
-          p: e.patrimonio,
-          n: e.nome_bem,
-          m: e.modelo,
-          t: e.tipo,
-          s: e.status,
-          e: e.estado,
-          a: e.ano_fabricacao,
-        }))
-        .slice(0, 400);
-
-      const prompt = `
-        Você é o Assistente Especialista da Tecnoloc (empresa de locação).
-        Sua missão é realizar análises precisas da frota de equipamentos.
-
-        DICIONÁRIO DE MAPEAMENTO SEMÂNTICO (O usuário usa apelidos, você mapeia para o Nome do Bem):
-        - "19KVA" -> "GRUPO GERADOR BRANCO DIESEL 19 KVA"
-        - "22KVA" -> "GRUPO GERADOR BRANCO DIESEL 22 KVA"
-        - "33KVA" -> "GRUPO GERADOR BRANCO DIESEL 33 KVA"
-        - "48KVA" -> "GRUPO GERADOR BRANCO DIESEL 48 KVA"
-        - "55KVA" ou "60KVA" -> "GRUPO GERADOR CUMMINS/PRAMAC 55/60 KVA"
-        - "120KVA" -> "GRUPO GERADOR CUMMINS 120 KVA"
-        - "150KVA" -> "GRUPO GERADOR CUMMINS 150 KVA"
-        - "200KVA" -> "GRUPO GERADOR CUMMINS 200 KVA"
-        - "260KVA" -> "GRUPO GERADOR CUMMINS 260 KVA"
-        - "360KVA" -> "GRUPO GERADOR CUMMINS 360 KVA"
-        - "500KVA" -> "GRUPO GERADOR CUMMINS 500 KVA"
-        - "Torre Solar" -> "TORRE DE ILUMINACAO SOLAR"
-        - "V5" -> "TORRE DE ILUMINACAO LED V5"
-        - "PipePro" -> "MAQUINA DE SOLDA MILLER PIPEPRO 450"
-        - "PipeWorx" -> "MAQUINA DE SOLDA MILLER PIPEWORX 400"
-        - "Vantage" -> "MOTOSOLDADORA LINCOLN VANTAGE"
-        - "Burro" -> "ROBO BURRO XL"
-        - "RT82" -> "ROLO COMPACTADOR WACKER RT82"
-
-        INSTRUÇÕES DE ANÁLISE:
-        1. Identifique o equipamento solicitado usando o dicionário acima ou buscando termos similares no campo 'n' (nome do bem).
-        2. Ao responder sobre um modelo, use o nome comercial completo.
-        3. Para contagem de "locados", considere APENAS os equipamentos com status "Locado".
-        4. Para "disponíveis", considere status "Liberado".
-        5. Se o usuário perguntar por estado (MG ou PA), filtre rigorosamente pelo campo 'e'.
-        6. Responda de forma profissional, executiva e em Português (Brasil).
-
-        DADOS DA FROTA (JSON):
-        ${JSON.stringify(compactData)}
-        
-        PERGUNTA:
-        ${userMessage}
-      `;
-
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: prompt,
+      const openai = new OpenAI({
+        apiKey: import.meta.env.VITE_OPENAI_API_KEY, 
+        dangerouslyAllowBrowser: true 
       });
 
-      const aiResponse = response.text || 'Não foi possível processar a consulta.';
+      const systemPrompt = `
+        Você é o Especialista de Frota da Tecnoloc. Sua missão é fornecer análises técnicas precisas sobre os 3.167 equipamentos.
+
+        REGRAS DE FILTRAGEM E CATEGORIZAÇÃO (OBRIGATÓRIO):
+        1. TORRES (FAMÍLIA TIL): Identifique torres APENAS se a coluna FAM (Família) for "TIL". Se a família não for TIL, ignore, mesmo que o nome sugira torre.
+        2. GRUPO GERADOR 120KVA: Inclua equipamentos de 100KVA neste grupo.
+        3. GRUPO GERADOR 200KVA: Inclua especificamente os modelos "200/180" ou "200 / 180" neste grupo.
+        4. DIFERENCIAÇÃO SOLDA (TIPO_MOD): 
+           - X-Treme: Se TIPO_MOD for MSM006 ou MSM007.
+           - 12RC: Se TIPO_MOD for MSM008 ou MSM009.
+
+        LISTA PADRONIZADA DE MODELOS (Use exatamente estes nomes):
+        X-Treme, 12RC, LN25, CST, V275, XMT, V350, Flextec 450, Flextec 650, DC600, DC1000, CV400, Trailblazer, Ranger, Rolo compactador.
+
+        LÓGICA DE ANÁLISE:
+        - QUANTITATIVA: Filtre por Família, Modelo e Estado (MG/PA).
+        - DISPONIBILIDADE: Status "Liberado" = Disponível. Status "Locado" = Em contrato.
+        - HORÍMETRO/IDADE: Para "maior horímetro" use Contador Acumulado. Para "mais velho" use o menor Ano de Fabricação.
+
+        DADOS DA FROTA (CSV):
+        ${optimizedFleetContext}
+
+        RESPONDA de forma curta, técnica e profissional em Português (Brasil).
+      `;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{ role: "system", content: systemPrompt }, ...newHistory],
+        temperature: 0.1,
+      });
+
+      const aiResponse = response.choices[0]?.message?.content || 'Não consegui processar a análise.';
       setMessages((prev) => [...prev, { role: 'assistant', content: aiResponse }]);
+
     } catch (error) {
-      console.error('AI Error:', error);
-      setMessages((prev) => [
-        ...prev,
-        { role: 'assistant', content: 'Erro na conexão com a IA. Por favor, tente novamente.' },
-      ]);
+      console.error('Erro OpenAI:', error);
+      setMessages((prev) => [...prev, { role: 'assistant', content: 'Erro na conexão com a IA. Verifique créditos e chave API.' }]);
     } finally {
       setIsTyping(false);
     }
@@ -115,64 +101,48 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({ fleetData }) => {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-8 right-8 w-16 h-16 bg-gradient-to-br from-primary to-secondary text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform z-50 group"
+        className="fixed bottom-8 right-8 w-16 h-16 bg-gradient-to-br from-[#10a37f] to-accent text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50 group"
       >
         <Sparkles className="group-hover:animate-pulse" size={28} />
       </button>
 
       {isOpen && (
         <div className="fixed inset-0 z-50 flex justify-end">
-          <div
-            className="absolute inset-0 bg-accent/20 backdrop-blur-sm"
-            onClick={() => setIsOpen(false)}
-          />
+          <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={() => setIsOpen(false)} />
           <div className="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
-            <div className="p-6 bg-accent text-white flex items-center justify-between">
+            <div className="p-6 bg-[#10a37f] text-white flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Sparkles size={20} className="text-secondary" />
+                <Bot size={24} />
                 <div>
-                  <h3 className="font-bold text-sm">IA Tecnoloc</h3>
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                    Expert em Frota
-                  </p>
+                  <h3 className="font-black text-sm uppercase">Analista Tecnoloc</h3>
+                  <p className="text-[9px] font-bold uppercase tracking-widest opacity-80">Base: 3.167 Itens</p>
                 </div>
               </div>
-              <button
-                onClick={() => setIsOpen(false)}
-                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-              >
-                <X size={20} />
-              </button>
+              <button onClick={() => setIsOpen(false)}><X size={20} /></button>
             </div>
-            <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50/50">
+
+            <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50 no-scrollbar">
               {messages.map((msg, i) => (
-                <div
-                  key={i}
-                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`p-4 rounded-2xl text-xs leading-relaxed shadow-sm ${msg.role === 'user' ? 'bg-primary text-white rounded-tr-none' : 'bg-white text-accent border border-gray-100 rounded-tl-none'}`}
-                  >
+                <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[85%] p-4 rounded-2xl text-xs leading-relaxed ${msg.role === 'user' ? 'bg-[#10a37f] text-white rounded-tr-none' : 'bg-white text-gray-800 border rounded-tl-none shadow-sm'}`}>
                     {msg.content}
                   </div>
                 </div>
               ))}
-              {isTyping && <Loader2 className="animate-spin text-primary mx-auto" size={16} />}
+              {isTyping && <Loader2 className="animate-spin text-[#10a37f] mx-auto" size={20} />}
             </div>
-            <div className="p-6 border-t border-gray-100 bg-white">
-              <div className="relative">
+
+            <div className="p-6 border-t bg-white">
+              <div className="relative group">
                 <input
                   type="text"
-                  placeholder="Ex: Quais geradores de 19kva estão em MG?"
-                  className="w-full pl-4 pr-12 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-xs outline-none"
+                  placeholder="Pergunte sobre a frota..."
+                  className="w-full pl-5 pr-14 py-4 bg-gray-50 border-2 border-transparent rounded-2xl text-xs font-bold outline-none focus:border-[#10a37f]/20 transition-all"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                 />
-                <button
-                  onClick={handleSend}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-primary text-white rounded-xl shadow-md"
-                >
+                <button onClick={handleSend} className="absolute right-2 top-1/2 -translate-y-1/2 p-3 bg-[#10a37f] text-white rounded-xl shadow-md">
                   <Send size={16} />
                 </button>
               </div>

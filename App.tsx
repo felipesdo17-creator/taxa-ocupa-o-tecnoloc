@@ -84,11 +84,16 @@ const App: React.FC = () => {
     if (!session || !supabase) return;
     setIsSyncing(true);
     try {
+      // AQUI ESTAVA O PROBLEMA: Adicionei .limit(5000)
       const { data, error } = await supabase
         .from('equipments')
         .select('*')
+        .limit(5000) // <--- CORREÇÃO: Aumenta o limite de 1000 para 5000
         .order('patrimonio', { ascending: true });
+        
       if (error) throw error;
+      
+      console.log(`Dados carregados: ${data?.length} itens.`); // Log para você confirmar no console
       setEquipmentData((data as Equipment[]) || []);
     } catch (err) {
       console.error('Erro ao buscar dados:', err);
@@ -126,9 +131,9 @@ const App: React.FC = () => {
           isSidebarCollapsed ? 'md:ml-20' : 'md:ml-64'
         }`}
       >
-        <header className="sticky top-0 z-30 bg-[#F8F9FA]/80 backdrop-blur-xl px-6 md:px-10 py-6 flex items-center justify-between border-b border-gray-100">
+        <header className="sticky top-0 z-30 bg-white px-8 md:px-12 py-6 flex items-center justify-between border-b border-gray-100">
           <div>
-            <h1 className="text-2xl md:text-3xl font-black tracking-tighter uppercase italic">
+            <h1 className="text-3xl md:text-4xl font-black tracking-tighter uppercase italic">
               {activeTab === 'dashboard'
                 ? 'Ocupação'
                 : activeTab === 'equipments'
