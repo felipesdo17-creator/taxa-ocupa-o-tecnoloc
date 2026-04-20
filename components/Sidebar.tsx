@@ -1,5 +1,14 @@
 import React from 'react';
-import { BarChart3, Package, Upload, ChevronLeft, ChevronRight, LogOut, Users, LucideIcon } from 'lucide-react';
+import {
+  BarChart3,
+  Package,
+  Upload,
+  ChevronLeft,
+  ChevronRight,
+  LogOut,
+  Users,
+  LucideIcon,
+} from 'lucide-react';
 
 interface SidebarProps {
   activeTab: string;
@@ -26,7 +35,7 @@ const NAVIGATION_ITEMS: NavItem[] = [
     roles: ['USUARIO', 'GESTOR', 'ADMIN'],
   },
   { id: 'upload', label: 'Importar Dados', icon: Upload, roles: ['GESTOR', 'ADMIN'] },
-  { id: 'users', label: 'Gestão de Acesso', icon: Users, roles: ['ADMIN'] },
+  { id: 'users', label: 'Gestao de Acesso', icon: Users, roles: ['ADMIN'] },
 ];
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -41,29 +50,29 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <aside
-      className={`hidden md:flex flex-col bg-accent text-white h-screen fixed left-0 top-0 z-40 transition-all duration-500 ease-in-out border-r border-white/5 ${
+      className={`fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-white/5 bg-accent text-white transition-all duration-500 ease-in-out ${
         isCollapsed ? 'w-20' : 'w-64'
       }`}
     >
-      <div className="p-6 flex items-center justify-between border-b border-white/5 h-24">
+      <div className="flex h-24 items-center justify-between border-b border-white/5 px-4 md:px-6">
         {!isCollapsed ? (
-          <div className="flex flex-col animate-in fade-in duration-500">
-            <span className="font-black text-2xl italic tracking-tighter text-primary">
+          <div className="flex flex-col animate-in fade-in duration-500 overflow-hidden">
+            <span className="font-black text-xl md:text-2xl italic tracking-tighter text-primary whitespace-nowrap">
               TECNOLOC
-              <span className="ml-2 text-xs bg-white text-accent px-2 py-1 rounded">DEV</span>
+              <span className="ml-2 rounded bg-white px-2 py-1 text-xs text-accent">DEV</span>
             </span>
-            <span className="text-[8px] font-bold uppercase text-gray-400 tracking-[0.2em]">
+            <span className="mt-2 text-[8px] font-bold uppercase text-gray-400 tracking-[0.2em] whitespace-nowrap">
               Frota Inteligente
             </span>
           </div>
         ) : (
-          <div className="w-full flex justify-center">
+          <div className="flex w-full justify-center">
             <span className="font-black text-xl italic text-primary">T</span>
           </div>
         )}
       </div>
 
-      <nav className="flex-1 py-6 px-3 space-y-3">
+      <nav className="flex-1 space-y-3 px-3 py-6">
         {filteredItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
@@ -71,15 +80,15 @@ const Sidebar: React.FC<SidebarProps> = ({
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center gap-4 rounded-2xl transition-all duration-300 group relative ${
+              className={`group relative flex w-full items-center gap-4 rounded-2xl transition-all duration-300 ${
                 isActive
-                  ? 'px-6 py-4 bg-primary text-white shadow-[0_12px_28px_rgba(255,107,0,0.14)]'
-                  : 'px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5'
+                  ? 'bg-primary px-4 md:px-6 py-4 text-white shadow-[0_12px_28px_rgba(255,107,0,0.14)]'
+                  : 'px-3 md:px-4 py-3 text-gray-400 hover:bg-white/5 hover:text-white'
               }`}
               title={isCollapsed ? item.label : ''}
             >
               <div
-                className={`p-2.5 rounded-2xl transition-all duration-300 ${
+                className={`rounded-2xl p-2.5 transition-all duration-300 ${
                   isActive ? 'bg-white/10' : ''
                 }`}
               >
@@ -89,22 +98,22 @@ const Sidebar: React.FC<SidebarProps> = ({
                 />
               </div>
               {!isCollapsed && (
-                <span className="font-bold text-sm truncate animate-in slide-in-from-left-2 uppercase tracking-wider">
+                <span className="truncate text-left font-bold text-xs md:text-sm uppercase tracking-wider">
                   {item.label}
                 </span>
               )}
               {isCollapsed && isActive && (
-                <div className="absolute right-0 w-1.5 h-8 bg-primary rounded-l-full" />
+                <div className="absolute right-0 h-8 w-1.5 rounded-l-full bg-primary" />
               )}
             </button>
           );
         })}
       </nav>
 
-      <div className="p-4 space-y-2 border-t border-white/5">
+      <div className="space-y-2 border-t border-white/5 p-3 md:p-4">
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="w-full flex items-center gap-4 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all"
+          className="flex w-full items-center gap-4 rounded-xl px-3 md:px-4 py-3 text-gray-400 transition-all hover:bg-white/5 hover:text-white"
         >
           {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
           {!isCollapsed && (
@@ -114,9 +123,9 @@ const Sidebar: React.FC<SidebarProps> = ({
 
         <button
           onClick={onLogout}
-          className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl text-red-400 hover:bg-red-400/10 transition-all group"
+          className="group flex w-full items-center gap-4 rounded-2xl px-3 md:px-4 py-4 text-red-400 transition-all hover:bg-red-400/10"
         >
-          <LogOut size={22} className="group-hover:translate-x-1 transition-transform" />
+          <LogOut size={22} className="transition-transform group-hover:translate-x-1" />
           {!isCollapsed && <span className="font-bold text-xs uppercase tracking-wider">Sair</span>}
         </button>
       </div>

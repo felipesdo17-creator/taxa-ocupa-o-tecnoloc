@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './lib/supabase';
 import Sidebar from './components/Sidebar';
-import MobileNav from './components/MobileNav';
 import Login from './components/Login';
 import FileUpload from './components/FileUpload';
 import EquipmentTable from './components/EquipmentTable';
@@ -10,13 +9,7 @@ import UserManagement from './components/UserManagement';
 import ChatAssistant from './components/ChatAssistant';
 import InstallAppButton from './components/InstallAppButton';
 import { Equipment } from './types';
-import {
-  RefreshCw,
-  UserCircle,
-  AlertTriangle,
-  CloudOff,
-  LogOut,
-} from 'lucide-react';
+import { RefreshCw, UserCircle, AlertTriangle, CloudOff } from 'lucide-react';
 
 const App: React.FC = () => {
   const [session, setSession] = useState<any>(null);
@@ -26,6 +19,12 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsSidebarCollapsed(window.innerWidth < 768);
+    }
+  }, []);
 
   if (!supabase) {
     return (
@@ -117,9 +116,10 @@ const App: React.FC = () => {
   if (!session) return <Login onSuccess={() => {}} />;
 
   const role = userProfile?.role || 'USUARIO';
+  const mainOffset = isSidebarCollapsed ? 'ml-20' : 'ml-64';
 
   return (
-    <div className="flex min-h-screen bg-[#F8F9FA] text-accent">
+    <div className="min-h-screen bg-[#F8F9FA] text-accent">
       <Sidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -129,11 +129,7 @@ const App: React.FC = () => {
         setIsCollapsed={setIsSidebarCollapsed}
       />
 
-      <main
-        className={`flex-1 transition-all duration-500 ease-in-out pb-36 md:pb-8 ${
-          isSidebarCollapsed ? 'md:ml-20' : 'md:ml-64'
-        }`}
-      >
+      <main className={`transition-all duration-500 ease-in-out ${mainOffset}`}>
         <header className="sticky top-0 z-30 border-b border-gray-100 bg-white/95 px-4 py-4 backdrop-blur-xl md:flex md:items-center md:justify-between md:bg-white md:px-12 md:py-6">
           <div className="md:flex-1">
             <h1 className="text-2xl md:text-4xl font-black tracking-tighter uppercase italic">
@@ -146,8 +142,8 @@ const App: React.FC = () => {
                     : 'Gestao'}
             </h1>
             <div className="mt-2 flex flex-wrap items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-              <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest">
+              <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
+              <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">
                 Perfil: {role} • {equipmentData.length} ativos
               </p>
             </div>
@@ -164,30 +160,23 @@ const App: React.FC = () => {
               <RefreshCw size={16} className={isSyncing ? 'animate-spin' : ''} />
               <span className="hidden sm:inline">Atualizar</span>
             </button>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 rounded-2xl border border-red-100 bg-red-50 px-3 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-red-500 shadow-sm transition-all active:scale-95 hover:bg-red-100"
-            >
-              <LogOut size={16} />
-              <span>Sair</span>
-            </button>
             <div className="hidden md:flex items-center gap-3 border-l border-gray-200 pl-4">
               <div className="text-right">
-                <p className="text-[10px] font-black text-accent truncate max-w-[120px]">
+                <p className="max-w-[120px] truncate text-[10px] font-black text-accent">
                   {session.user.email}
                 </p>
-                <p className="text-[8px] font-bold text-primary uppercase tracking-tighter">
+                <p className="text-[8px] font-bold uppercase tracking-tighter text-primary">
                   Tecnoloc S/A
                 </p>
               </div>
-              <div className="w-12 h-12 rounded-2xl bg-accent text-white flex items-center justify-center shadow-lg">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent text-white shadow-lg">
                 <UserCircle size={28} />
               </div>
             </div>
           </div>
         </header>
 
-        <section className="max-w-[1600px] mx-auto px-3 py-6 md:px-10 md:py-8">
+        <section className="mx-auto max-w-[1600px] px-3 py-6 md:px-10 md:py-8">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-32">
               <div className="relative">
@@ -196,7 +185,7 @@ const App: React.FC = () => {
                   <span className="text-[10px] font-black text-primary">TL</span>
                 </div>
               </div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] mt-6">
+              <p className="mt-6 text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">
                 Sincronizando banco de dados...
               </p>
             </div>
@@ -215,11 +204,7 @@ const App: React.FC = () => {
         </section>
       </main>
 
-      <MobileNav activeTab={activeTab} setActiveTab={setActiveTab} userRole={role} />
-      <div className="sm:hidden fixed bottom-24 right-4 z-40">
-        <ChatAssistant fleetData={equipmentData} />
-      </div>
-      <div className="hidden sm:block">
+      <div className="fixed bottom-6 right-6 z-40">
         <ChatAssistant fleetData={equipmentData} />
       </div>
     </div>
