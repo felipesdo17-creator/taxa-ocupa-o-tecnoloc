@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { processRawData, normalizeString } from '../utils/dataProcessor';
@@ -47,8 +46,8 @@ const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded }) => {
         const rawRows: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
         const searchTerm = normalizeString('Patrimônio');
-        const headerRowIndex = rawRows.findIndex(row =>
-          row.some(cell => normalizeString(String(cell || '')).includes(searchTerm))
+        const headerRowIndex = rawRows.findIndex((row) =>
+          row.some((cell) => normalizeString(String(cell || '')).includes(searchTerm))
         );
 
         if (headerRowIndex === -1) {
@@ -57,7 +56,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded }) => {
 
         const jsonData = XLSX.utils.sheet_to_json(worksheet, {
           range: headerRowIndex,
-          defval: ''
+          defval: '',
         });
 
         setProgress(40);
@@ -78,7 +77,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded }) => {
               upsert: true,
             });
         } catch (sErr) {
-          console.warn("Storage inacessível, continuando apenas com o Banco de Dados.", sErr);
+          console.warn('Storage inacessível, continuando apenas com o Banco de Dados.', sErr);
         }
 
         setProgress(70);
@@ -86,7 +85,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded }) => {
         // Passo 3: Limpeza e Inserção no Banco de Dados
         // Para uma sincronização de frota, geralmente limpamos e inserimos os novos dados
         // ou usamos uma lógica de UPSERT baseada no patrimônio.
-        
+
         // Aqui, removemos os dados antigos para garantir que o dashboard reflita exatamente a planilha enviada
         const { error: deleteError } = await supabase
           .from('equipments')
@@ -95,9 +94,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded }) => {
 
         if (deleteError) throw deleteError;
 
-        const { error: insertError } = await (supabase
-          .from('equipments') as any)
-          .insert(processed);
+        const { error: insertError } = await (supabase.from('equipments') as any).insert(processed);
 
         if (insertError) throw insertError;
 
@@ -109,9 +106,8 @@ const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded }) => {
           setLoading(false);
           alert(`Sucesso! ${processed.length} equipamentos foram sincronizados.`);
         }, 500);
-
       } catch (err: any) {
-        console.error("Erro no processamento:", err);
+        console.error('Erro no processamento:', err);
         setError(err.message || 'Erro inesperado no processamento.');
         setLoading(false);
       }
@@ -136,9 +132,14 @@ const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded }) => {
     <div className="max-w-4xl mx-auto mt-12 px-4">
       <div
         className={`border-2 border-dashed rounded-3xl p-12 text-center transition-all ${
-          isDragging ? 'border-primary bg-primary/5 scale-105' : 'border-gray-200 bg-white shadow-sm'
+          isDragging
+            ? 'border-primary bg-primary/5 scale-105'
+            : 'border-gray-200 bg-white shadow-sm'
         }`}
-        onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setIsDragging(true);
+        }}
         onDragLeave={() => setIsDragging(false)}
         onDrop={onDrop}
       >
@@ -147,9 +148,12 @@ const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded }) => {
             <div className="bg-primary/10 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 text-primary">
               <Upload size={32} />
             </div>
-            <h2 className="text-2xl font-black text-accent mb-2 uppercase tracking-tighter italic">Sincronizar Frota</h2>
+            <h2 className="text-2xl font-black text-accent mb-2 uppercase tracking-tighter italic">
+              Sincronizar Frota
+            </h2>
             <p className="text-gray-500 mb-8 max-w-sm mx-auto leading-relaxed text-xs font-medium">
-              Arraste a planilha de equipamentos aqui. O sistema atualizará o banco de dados e recalculará as taxas de ocupação instantaneamente.
+              Arraste a planilha de equipamentos aqui. O sistema atualizará o banco de dados e
+              recalculará as taxas de ocupação instantaneamente.
             </p>
             <input
               type="file"
@@ -168,12 +172,14 @@ const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded }) => {
         ) : (
           <div className="py-10">
             <div className="relative w-20 h-20 mx-auto mb-8">
-               <Loader2 className="animate-spin text-primary w-full h-full" />
-               <div className="absolute inset-0 flex items-center justify-center">
-                 <span className="text-[10px] font-black text-primary">{progress}%</span>
-               </div>
+              <Loader2 className="animate-spin text-primary w-full h-full" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-[10px] font-black text-primary">{progress}%</span>
+              </div>
             </div>
-            <h3 className="text-xl font-black text-accent mb-4 uppercase tracking-tighter italic">Sincronizando Sistemas...</h3>
+            <h3 className="text-xl font-black text-accent mb-4 uppercase tracking-tighter italic">
+              Sincronizando Sistemas...
+            </h3>
             <div className="w-full max-w-md mx-auto h-2 bg-gray-100 rounded-full overflow-hidden">
               <div
                 className="h-full bg-primary transition-all duration-300"
@@ -193,16 +199,22 @@ const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded }) => {
 
       <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 opacity-60">
         <div className="flex gap-4 p-5 rounded-2xl bg-white border border-gray-100">
-           <FileSpreadsheet className="text-blue-500 shrink-0" size={20} />
-           <div className="text-[9px] font-black uppercase tracking-widest text-accent">Parsing SheetJS v0.20</div>
+          <FileSpreadsheet className="text-blue-500 shrink-0" size={20} />
+          <div className="text-[9px] font-black uppercase tracking-widest text-accent">
+            Parsing SheetJS v0.20
+          </div>
         </div>
         <div className="flex gap-4 p-5 rounded-2xl bg-white border border-gray-100">
-           <CheckCircle className="text-green-500 shrink-0" size={20} />
-           <div className="text-[9px] font-black uppercase tracking-widest text-accent">DB Sync Supabase</div>
+          <CheckCircle className="text-green-500 shrink-0" size={20} />
+          <div className="text-[9px] font-black uppercase tracking-widest text-accent">
+            DB Sync Supabase
+          </div>
         </div>
         <div className="flex gap-4 p-5 rounded-2xl bg-white border border-gray-100">
-           <Upload className="text-primary shrink-0" size={20} />
-           <div className="text-[9px] font-black uppercase tracking-widest text-accent">Recalibração TO</div>
+          <Upload className="text-primary shrink-0" size={20} />
+          <div className="text-[9px] font-black uppercase tracking-widest text-accent">
+            Recalibração TO
+          </div>
         </div>
       </div>
     </div>

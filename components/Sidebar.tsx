@@ -1,5 +1,13 @@
-import React, { useState } from 'react';
-import { BarChart3, Package, Upload, ShieldAlert, ChevronLeft, ChevronRight, LogOut, Users } from 'lucide-react';
+import React from 'react';
+import {
+  BarChart3,
+  Package,
+  Upload,
+  ChevronLeft,
+  ChevronRight,
+  LogOut,
+  Users,
+} from 'lucide-react';
 
 interface SidebarProps {
   activeTab: string;
@@ -10,25 +18,30 @@ interface SidebarProps {
   setIsCollapsed: (val: boolean) => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ 
-  activeTab, 
-  setActiveTab, 
-  userRole, 
-  onLogout, 
-  isCollapsed, 
-  setIsCollapsed 
+const Sidebar: React.FC<SidebarProps> = ({
+  activeTab,
+  setActiveTab,
+  userRole,
+  onLogout,
+  isCollapsed,
+  setIsCollapsed,
 }) => {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3, roles: ['USUARIO', 'GESTOR', 'ADMIN'] },
-    { id: 'equipments', label: 'Equipamentos', icon: Package, roles: ['USUARIO', 'GESTOR', 'ADMIN'] },
+    {
+      id: 'equipments',
+      label: 'Equipamentos',
+      icon: Package,
+      roles: ['USUARIO', 'GESTOR', 'ADMIN'],
+    },
     { id: 'upload', label: 'Importar Dados', icon: Upload, roles: ['GESTOR', 'ADMIN'] },
     { id: 'users', label: 'Gestão de Acesso', icon: Users, roles: ['ADMIN'] },
   ];
 
-  const filteredItems = navItems.filter(item => item.roles.includes(userRole));
+  const filteredItems = navItems.filter((item) => item.roles.includes(userRole));
 
   return (
-    <aside 
+    <aside
       className={`hidden md:flex flex-col bg-accent text-white h-screen fixed left-0 top-0 z-40 transition-all duration-500 ease-in-out border-r border-white/5 ${
         isCollapsed ? 'w-20' : 'w-64'
       }`}
@@ -36,8 +49,12 @@ const Sidebar: React.FC<SidebarProps> = ({
       <div className="p-6 flex items-center justify-between border-b border-white/5 h-24">
         {!isCollapsed ? (
           <div className="flex flex-col animate-in fade-in duration-500">
-            <span className="font-black text-2xl italic tracking-tighter text-primary">TECNOLOC</span>
-            <span className="text-[8px] font-bold uppercase text-gray-400 tracking-[0.2em]">Frota Inteligente</span>
+            <span className="font-black text-2xl italic tracking-tighter text-primary">
+              TECNOLOC
+            </span>
+            <span className="text-[8px] font-bold uppercase text-gray-400 tracking-[0.2em]">
+              Frota Inteligente
+            </span>
           </div>
         ) : (
           <div className="w-full flex justify-center">
@@ -55,13 +72,16 @@ const Sidebar: React.FC<SidebarProps> = ({
               key={item.id}
               onClick={() => setActiveTab(item.id)}
               className={`w-full flex items-center gap-4 px-4 py-4 rounded-2xl transition-all duration-300 group relative ${
-                isActive 
-                  ? 'bg-primary text-white shadow-xl shadow-primary/20' 
+                isActive
+                  ? 'bg-primary text-white shadow-xl shadow-primary/20'
                   : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`}
               title={isCollapsed ? item.label : ''}
             >
-              <Icon size={22} className={isActive ? 'text-white' : 'group-hover:text-primary transition-colors'} />
+              <Icon
+                size={22}
+                className={isActive ? 'text-white' : 'group-hover:text-primary transition-colors'}
+              />
               {!isCollapsed && (
                 <span className="font-bold text-xs truncate animate-in slide-in-from-left-2 uppercase tracking-wider">
                   {item.label}
@@ -76,15 +96,17 @@ const Sidebar: React.FC<SidebarProps> = ({
       </nav>
 
       <div className="p-4 space-y-2 border-t border-white/5">
-        <button 
+        <button
           onClick={() => setIsCollapsed(!isCollapsed)}
           className="w-full flex items-center gap-4 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all"
         >
           {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
-          {!isCollapsed && <span className="text-[10px] font-black uppercase tracking-widest">Recolher Menu</span>}
+          {!isCollapsed && (
+            <span className="text-[10px] font-black uppercase tracking-widest">Recolher Menu</span>
+          )}
         </button>
-        
-        <button 
+
+        <button
           onClick={onLogout}
           className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl text-red-400 hover:bg-red-400/10 transition-all group"
         >

@@ -21,7 +21,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ supabase }) => {
 
       if (!error && data) setUsers(data);
     } catch (err) {
-      console.error("Erro ao carregar usuários:", err);
+      console.error('Erro ao carregar usuários:', err);
     } finally {
       setLoading(false);
     }
@@ -33,23 +33,23 @@ const UserManagement: React.FC<UserManagementProps> = ({ supabase }) => {
 
   const updateRole = async (userId: string, newRole: string) => {
     setUpdating(userId);
-    const { error } = await supabase
-      .from('profiles')
-      .update({ role: newRole })
-      .eq('id', userId);
+    const { error } = await supabase.from('profiles').update({ role: newRole }).eq('id', userId);
 
     if (!error) {
-      setUsers(users.map(u => u.id === userId ? { ...u, role: newRole } : u));
+      setUsers(users.map((u) => (u.id === userId ? { ...u, role: newRole } : u)));
     }
     setUpdating(null);
   };
 
-  if (loading) return (
-    <div className="flex flex-col items-center justify-center py-20">
-      <RefreshCw className="animate-spin text-primary mb-4" size={32} />
-      <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Sincronizando permissões...</p>
-    </div>
-  );
+  if (loading)
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <RefreshCw className="animate-spin text-primary mb-4" size={32} />
+        <p className="text-xs font-black text-gray-400 uppercase tracking-widest">
+          Sincronizando permissões...
+        </p>
+      </div>
+    );
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -59,9 +59,14 @@ const UserManagement: React.FC<UserManagementProps> = ({ supabase }) => {
             <h2 className="text-2xl font-black text-accent flex items-center gap-3">
               <Shield className="text-primary" /> Gestão de Acesso
             </h2>
-            <p className="text-xs text-gray-400 font-medium mt-1 uppercase tracking-wider">Configure os níveis de segurança da Tecnoloc</p>
+            <p className="text-xs text-gray-400 font-medium mt-1 uppercase tracking-wider">
+              Configure os níveis de segurança da Tecnoloc
+            </p>
           </div>
-          <button onClick={fetchUsers} className="p-3 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-colors">
+          <button
+            onClick={fetchUsers}
+            className="p-3 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-colors"
+          >
             <RefreshCw size={20} className="text-accent" />
           </button>
         </div>
@@ -70,9 +75,15 @@ const UserManagement: React.FC<UserManagementProps> = ({ supabase }) => {
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-gray-50">
-                <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Usuário</th>
-                <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Nível de Acesso</th>
-                <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Ações</th>
+                <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                  Usuário
+                </th>
+                <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                  Nível de Acesso
+                </th>
+                <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">
+                  Ações
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -85,16 +96,22 @@ const UserManagement: React.FC<UserManagementProps> = ({ supabase }) => {
                       </div>
                       <div className="flex flex-col">
                         <span className="text-sm font-bold text-accent">{user.email}</span>
-                        <span className="text-[10px] text-gray-400">Desde {new Date(user.created_at).toLocaleDateString()}</span>
+                        <span className="text-[10px] text-gray-400">
+                          Desde {new Date(user.created_at).toLocaleDateString()}
+                        </span>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-6">
-                    <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter border ${
-                      user.role === 'ADMIN' ? 'bg-red-50 text-red-600 border-red-100' :
-                      user.role === 'GESTOR' ? 'bg-primary/10 text-primary border-primary/20' :
-                      'bg-blue-50 text-blue-600 border-blue-100'
-                    }`}>
+                    <span
+                      className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter border ${
+                        user.role === 'ADMIN'
+                          ? 'bg-red-50 text-red-600 border-red-100'
+                          : user.role === 'GESTOR'
+                            ? 'bg-primary/10 text-primary border-primary/20'
+                            : 'bg-blue-50 text-blue-600 border-blue-100'
+                      }`}
+                    >
                       {user.role}
                     </span>
                   </td>
@@ -106,8 +123,8 @@ const UserManagement: React.FC<UserManagementProps> = ({ supabase }) => {
                           disabled={updating === user.id || user.role === role}
                           onClick={() => updateRole(user.id, role)}
                           className={`px-3 py-2 rounded-xl text-[9px] font-black transition-all ${
-                            user.role === role 
-                              ? 'bg-accent text-white' 
+                            user.role === role
+                              ? 'bg-accent text-white'
                               : 'bg-gray-50 text-gray-400 hover:bg-gray-100'
                           }`}
                         >

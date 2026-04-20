@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { ShieldCheck, Mail, Lock, Loader2, ArrowRight, CloudOff } from 'lucide-react';
@@ -17,7 +16,7 @@ const Login: React.FC<LoginProps> = ({ onSuccess }) => {
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!supabase) return;
-    
+
     setIsLoading(true);
     setError(null);
 
@@ -25,7 +24,7 @@ const Login: React.FC<LoginProps> = ({ onSuccess }) => {
       if (isSignUp) {
         const { error } = await (supabase.auth as any).signUp({ email, password });
         if (error) throw error;
-        alert("Conta criada! O Administrador irá definir seu nível de acesso.");
+        alert('Conta criada! O Administrador irá definir seu nível de acesso.');
       } else {
         const { error } = await (supabase.auth as any).signInWithPassword({ email, password });
         if (error) throw error;
@@ -61,15 +60,20 @@ const Login: React.FC<LoginProps> = ({ onSuccess }) => {
             <ShieldCheck size={40} />
           </div>
           <h1 className="text-4xl font-black text-accent tracking-tighter italic">TECNOLOC</h1>
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.4em] mt-3">Sistemas de Frota v3.0</p>
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.4em] mt-3">
+            Sistemas de Frota v3.0
+          </p>
         </div>
 
         <form onSubmit={handleAuth} className="space-y-6">
           <div className="space-y-4">
             <div className="relative group">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-primary transition-colors" size={18} />
-              <input 
-                type="email" 
+              <Mail
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-primary transition-colors"
+                size={18}
+              />
+              <input
+                type="email"
                 placeholder="Seu E-mail"
                 required
                 className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent rounded-2xl text-sm focus:border-primary/20 focus:bg-white outline-none transition-all font-medium"
@@ -78,9 +82,12 @@ const Login: React.FC<LoginProps> = ({ onSuccess }) => {
               />
             </div>
             <div className="relative group">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-primary transition-colors" size={18} />
-              <input 
-                type="password" 
+              <Lock
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-primary transition-colors"
+                size={18}
+              />
+              <input
+                type="password"
                 placeholder="Sua Senha"
                 required
                 className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent rounded-2xl text-sm focus:border-primary/20 focus:bg-white outline-none transition-all font-medium"
@@ -96,12 +103,14 @@ const Login: React.FC<LoginProps> = ({ onSuccess }) => {
             </div>
           )}
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             disabled={isLoading}
             className="w-full py-5 bg-accent text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl hover:bg-black active:scale-[0.98] transition-all flex items-center justify-center gap-3 group"
           >
-            {isLoading ? <Loader2 className="animate-spin" size={20} /> : (
+            {isLoading ? (
+              <Loader2 className="animate-spin" size={20} />
+            ) : (
               <>
                 {isSignUp ? 'Criar Nova Conta' : 'Acessar Dashboard'}
                 <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
@@ -111,7 +120,7 @@ const Login: React.FC<LoginProps> = ({ onSuccess }) => {
         </form>
 
         <div className="mt-10 text-center">
-          <button 
+          <button
             onClick={() => setIsSignUp(!isSignUp)}
             className="text-[11px] font-black text-gray-400 uppercase tracking-widest hover:text-primary transition-colors py-2"
           >

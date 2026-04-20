@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { LucideIcon } from 'lucide-react';
 
@@ -15,7 +14,7 @@ const KpiCard: React.FC<KpiCardProps> = ({ title, value, subtitle, icon: Icon, c
   const colorClasses = {
     green: 'bg-primary/10 text-primary',
     orange: 'bg-secondary/10 text-secondary',
-    gray: 'bg-accent/10 text-accent'
+    gray: 'bg-accent/10 text-accent',
   };
 
   return (

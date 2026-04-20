@@ -1,21 +1,20 @@
-
 export enum EquipmentStatus {
   LIBERADO = 'Liberado',
   LOCADO = 'Locado',
   VENDIDO = 'Vendido',
   INATIVO = 'Inativo',
   EM_MANUTENCAO = 'Em Manutenção',
-  DEVOLUCAO = 'Devolução'
+  DEVOLUCAO = 'Devolução',
 }
 
-export type EquipmentType = 
-  | 'Torres' 
-  | 'Geradores' 
-  | 'Solda' 
-  | 'Mini Rolo' 
-  | 'Controle' 
-  | 'Quadros' 
-  | 'Sublocados' 
+export type EquipmentType =
+  | 'Torres'
+  | 'Geradores'
+  | 'Solda'
+  | 'Mini Rolo'
+  | 'Controle'
+  | 'Quadros'
+  | 'Sublocados'
   | 'Outros';
 
 export interface Equipment {
