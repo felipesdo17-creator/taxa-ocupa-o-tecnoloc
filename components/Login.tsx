@@ -12,7 +12,6 @@ const Login: React.FC<LoginProps> = ({ onSuccess }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -23,17 +22,11 @@ const Login: React.FC<LoginProps> = ({ onSuccess }) => {
     setError(null);
 
     try {
-      if (isSignUp) {
-        const { error } = await (supabase.auth as any).signUp({ email, password });
-        if (error) throw error;
-        alert('Conta criada! O Administrador irá definir seu nível de acesso.');
-      } else {
-        const { error } = await (supabase.auth as any).signInWithPassword({ email, password });
-        if (error) throw error;
-        onSuccess();
-      }
+      const { error } = await (supabase.auth as any).signInWithPassword({ email, password });
+      if (error) throw error;
+      onSuccess();
     } catch (err: any) {
-      setError(err.message || 'Falha na autenticação');
+      setError(err.message || 'Falha na autenticacao');
     } finally {
       setIsLoading(false);
     }
@@ -44,8 +37,8 @@ const Login: React.FC<LoginProps> = ({ onSuccess }) => {
       <div className="min-h-screen bg-accent flex items-center justify-center p-6">
         <div className="bg-white p-8 rounded-3xl text-center shadow-2xl">
           <CloudOff className="text-red-500 mx-auto mb-4" size={48} />
-          <h2 className="text-xl font-bold">Erro de Conexão</h2>
-          <p className="text-gray-500 text-sm mt-2">Supabase não inicializado corretamente.</p>
+          <h2 className="text-xl font-bold">Erro de Conexao</h2>
+          <p className="text-gray-500 text-sm mt-2">Supabase nao inicializado corretamente.</p>
         </div>
       </div>
     );
@@ -71,7 +64,7 @@ const Login: React.FC<LoginProps> = ({ onSuccess }) => {
           <div className="space-y-4">
             <Input
               type="email"
-              placeholder="Seu E-mail"
+              placeholder="Seu e-mail"
               required
               icon={<Mail size={18} />}
               value={email}
@@ -79,7 +72,7 @@ const Login: React.FC<LoginProps> = ({ onSuccess }) => {
             />
             <Input
               type="password"
-              placeholder="Sua Senha"
+              placeholder="Sua senha"
               required
               icon={<Lock size={18} />}
               value={password}
@@ -102,18 +95,9 @@ const Login: React.FC<LoginProps> = ({ onSuccess }) => {
             icon={!isLoading && <ArrowRight size={20} />}
             className="w-full"
           >
-            {isSignUp ? 'Criar Nova Conta' : 'Acessar Dashboard'}
+            Acessar Dashboard
           </Button>
         </form>
-
-        <div className="mt-10 text-center">
-          <button
-            onClick={() => setIsSignUp(!isSignUp)}
-            className="text-[11px] font-black text-gray-400 uppercase tracking-widest hover:text-primary transition-colors py-2"
-          >
-            {isSignUp ? 'Já tem uma conta? Entrar' : 'Não tem conta? Cadastrar Acesso'}
-          </button>
-        </div>
       </div>
     </div>
   );
