@@ -18,15 +18,19 @@ const MobileNav: React.FC<MobileNavProps> = ({ activeTab, setActiveTab, userRole
   const filteredItems = navItems.filter((item) => item.roles.includes(userRole));
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-gray-100 z-50 px-4 pb-safe pt-3 flex items-center justify-around shadow-[0_-10px_40px_rgba(0,0,0,0.05)] rounded-t-[2.5rem]">
-      {filteredItems.map((item) => {
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 rounded-t-[2rem] border-t border-gray-100 bg-white/95 px-2 pb-safe pt-2 shadow-[0_-10px_40px_rgba(0,0,0,0.06)] backdrop-blur-xl">
+      <div
+        className="grid items-center gap-1"
+        style={{ gridTemplateColumns: `repeat(${filteredItems.length}, minmax(0, 1fr))` }}
+      >
+        {filteredItems.map((item) => {
         const Icon = item.icon;
         const isActive = activeTab === item.id;
         return (
           <button
             key={item.id}
             onClick={() => setActiveTab(item.id)}
-            className={`flex flex-col items-center gap-1.5 py-2 transition-all active:scale-90 ${
+            className={`flex min-w-0 flex-col items-center gap-1.5 rounded-2xl py-2 transition-all active:scale-90 ${
               isActive ? 'text-primary' : 'text-gray-400'
             }`}
           >
@@ -37,10 +41,13 @@ const MobileNav: React.FC<MobileNavProps> = ({ activeTab, setActiveTab, userRole
             >
               <Icon size={20} strokeWidth={isActive ? 3 : 2} />
             </div>
-            <span className="text-[8px] font-black uppercase tracking-widest">{item.label}</span>
+            <span className="truncate px-1 text-[8px] font-black uppercase tracking-[0.18em]">
+              {item.label}
+            </span>
           </button>
         );
-      })}
+        })}
+      </div>
     </nav>
   );
 };

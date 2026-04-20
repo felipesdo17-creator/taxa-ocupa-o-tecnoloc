@@ -10,7 +10,13 @@ import UserManagement from './components/UserManagement';
 import ChatAssistant from './components/ChatAssistant';
 import InstallAppButton from './components/InstallAppButton';
 import { Equipment } from './types';
-import { RefreshCw, UserCircle, AlertTriangle, CloudOff } from 'lucide-react';
+import {
+  RefreshCw,
+  UserCircle,
+  AlertTriangle,
+  CloudOff,
+  LogOut,
+} from 'lucide-react';
 
 const App: React.FC = () => {
   const [session, setSession] = useState<any>(null);
@@ -21,7 +27,6 @@ const App: React.FC = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-  // Se o supabase falhar ao inicializar (variáveis faltando)
   if (!supabase) {
     return (
       <div className="min-h-screen bg-accent flex items-center justify-center p-6">
@@ -30,16 +35,16 @@ const App: React.FC = () => {
             <CloudOff size={40} />
           </div>
           <h2 className="text-2xl font-black text-accent mb-4 tracking-tighter">
-            Configuração Pendente
+            Configuracao pendente
           </h2>
           <p className="text-gray-500 text-sm leading-relaxed mb-8">
-            As chaves do Supabase não foram detectadas no ambiente.
+            As chaves do Supabase nao foram detectadas no ambiente.
           </p>
           <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100 flex items-start gap-3 text-left">
             <AlertTriangle className="text-amber-600 shrink-0" size={18} />
             <p className="text-[10px] text-amber-800 font-bold uppercase tracking-wider">
-              Certifique-se de que as variáveis VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY estão
-              configuradas.
+              Certifique-se de que as variaveis VITE_SUPABASE_URL e
+              VITE_SUPABASE_ANON_KEY estao configuradas.
             </p>
           </div>
         </div>
@@ -48,7 +53,6 @@ const App: React.FC = () => {
   }
 
   useEffect(() => {
-    // Escuta estado de autenticação centralizado
     (supabase.auth as any).getSession().then(({ data: { session } }: any) => {
       setSession(session);
       if (session) fetchProfile(session.user.id);
@@ -84,16 +88,15 @@ const App: React.FC = () => {
     if (!session || !supabase) return;
     setIsSyncing(true);
     try {
-      // AQUI ESTAVA O PROBLEMA: Adicionei .limit(5000)
       const { data, error } = await supabase
         .from('equipments')
         .select('*')
-        .limit(5000) // <--- CORREÇÃO: Aumenta o limite de 1000 para 5000
+        .limit(5000)
         .order('patrimonio', { ascending: true });
-        
+
       if (error) throw error;
-      
-      console.log(`Dados carregados: ${data?.length} itens.`); // Log para você confirmar no console
+
+      console.log(`Dados carregados: ${data?.length} itens.`);
       setEquipmentData((data as Equipment[]) || []);
     } catch (err) {
       console.error('Erro ao buscar dados:', err);
@@ -127,40 +130,48 @@ const App: React.FC = () => {
       />
 
       <main
-        className={`flex-1 transition-all duration-500 ease-in-out pb-24 md:pb-8 ${
+        className={`flex-1 transition-all duration-500 ease-in-out pb-36 md:pb-8 ${
           isSidebarCollapsed ? 'md:ml-20' : 'md:ml-64'
         }`}
       >
-        <header className="sticky top-0 z-30 bg-white px-8 md:px-12 py-6 flex items-center justify-between border-b border-gray-100">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-black tracking-tighter uppercase italic">
+        <header className="sticky top-0 z-30 border-b border-gray-100 bg-white/95 px-4 py-4 backdrop-blur-xl md:flex md:items-center md:justify-between md:bg-white md:px-12 md:py-6">
+          <div className="md:flex-1">
+            <h1 className="text-2xl md:text-4xl font-black tracking-tighter uppercase italic">
               {activeTab === 'dashboard'
-                ? 'Ocupação'
+                ? 'Ocupacao'
                 : activeTab === 'equipments'
                   ? 'Frota'
                   : activeTab === 'upload'
-                    ? 'Importação'
-                    : 'Gestão'}
+                    ? 'Importacao'
+                    : 'Gestao'}
             </h1>
-            <div className="flex items-center gap-2 mt-1">
+            <div className="mt-2 flex flex-wrap items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
               <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest">
-                Perfil: {role} • {equipmentData.length} ATIVOS
+                Perfil: {role} • {equipmentData.length} ativos
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="mt-4 flex items-center gap-2 md:mt-0 md:gap-4">
             <div className="hidden sm:block">
               <InstallAppButton />
             </div>
             <button
               onClick={fetchCloudData}
-              className="p-3 bg-white rounded-2xl shadow-sm border border-gray-100 text-gray-400 hover:text-primary transition-all active:scale-95"
+              className="flex items-center gap-2 rounded-2xl border border-gray-100 bg-white px-3 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-gray-500 shadow-sm transition-all active:scale-95 hover:text-primary"
             >
-              <RefreshCw size={18} className={isSyncing ? 'animate-spin' : ''} />
+              <RefreshCw size={16} className={isSyncing ? 'animate-spin' : ''} />
+              <span className="hidden sm:inline">Atualizar</span>
             </button>
-            <div className="hidden md:flex items-center gap-3 pl-4 border-l border-gray-200">
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 rounded-2xl border border-red-100 bg-red-50 px-3 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-red-500 shadow-sm transition-all active:scale-95 hover:bg-red-100"
+            >
+              <LogOut size={16} />
+              <span>Sair</span>
+            </button>
+            <div className="hidden md:flex items-center gap-3 border-l border-gray-200 pl-4">
               <div className="text-right">
                 <p className="text-[10px] font-black text-accent truncate max-w-[120px]">
                   {session.user.email}
@@ -176,7 +187,7 @@ const App: React.FC = () => {
           </div>
         </header>
 
-        <section className="px-4 md:px-10 py-8 max-w-[1600px] mx-auto">
+        <section className="max-w-[1600px] mx-auto px-3 py-6 md:px-10 md:py-8">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-32">
               <div className="relative">
@@ -186,7 +197,7 @@ const App: React.FC = () => {
                 </div>
               </div>
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] mt-6">
-                Sincronizando Banco de Dados...
+                Sincronizando banco de dados...
               </p>
             </div>
           ) : (
@@ -196,7 +207,9 @@ const App: React.FC = () => {
               {activeTab === 'upload' && (role === 'GESTOR' || role === 'ADMIN') && (
                 <FileUpload onDataLoaded={fetchCloudData} />
               )}
-              {activeTab === 'users' && role === 'ADMIN' && <UserManagement supabase={supabase} />}
+              {activeTab === 'users' && role === 'ADMIN' && (
+                <UserManagement supabase={supabase} />
+              )}
             </>
           )}
         </section>
@@ -204,9 +217,11 @@ const App: React.FC = () => {
 
       <MobileNav activeTab={activeTab} setActiveTab={setActiveTab} userRole={role} />
       <div className="sm:hidden fixed bottom-24 right-4 z-40">
-        <InstallAppButton />
+        <ChatAssistant fleetData={equipmentData} />
       </div>
-      <ChatAssistant fleetData={equipmentData} />
+      <div className="hidden sm:block">
+        <ChatAssistant fleetData={equipmentData} />
+      </div>
     </div>
   );
 };
