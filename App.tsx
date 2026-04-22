@@ -161,9 +161,7 @@ const App: React.FC = () => {
           </div>
 
           <div className="mt-4 flex items-center gap-2 md:mt-0 md:gap-4">
-            <div className="hidden sm:block">
-              <InstallAppButton />
-            </div>
+            <InstallAppButton />
             <button
               onClick={fetchCloudData}
               className="flex items-center gap-2 rounded-2xl border border-gray-100 bg-white px-3 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-gray-500 shadow-sm transition-all active:scale-95 hover:text-primary"
